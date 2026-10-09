@@ -11,6 +11,7 @@ extension ApprovalModel {
             model.settings = Settings(relayURL: "https://example.invalid", relayToken: "fixture", brokerID: "broker_fixture", phoneID: "phone_fixture", brokerSigningPublicJWK: "{}", brokerEncryptionPublicJWK: "{}")
             model.lastSync = Date()
             model.notificationPermission = .enabled
+            model.notificationPreviewSetting = .whenAuthenticated
             let arguments = ProcessInfo.processInfo.arguments
             if arguments.contains("--notifications-denied") { model.notificationPermission = .denied }
             if arguments.contains("--notifications-new") { model.notificationPermission = .notRequested }

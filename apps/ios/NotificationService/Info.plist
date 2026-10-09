@@ -22,24 +22,11 @@
 	<string>16</string>
 	<key>NSExtension</key>
 	<dict>
-		<key>NSExtensionAttributes</key>
-		<dict>
-			<key>UNNotificationExtensionCategory</key>
-			<string>KEYWARDEN_APPROVAL</string>
-			<key>UNNotificationExtensionDefaultContentHidden</key>
-			<true/>
-			<key>UNNotificationExtensionInitialContentSizeRatio</key>
-			<real>1.2</real>
-			<key>UNNotificationExtensionUserInteractionEnabled</key>
-			<true/>
-		</dict>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.usernotifications.content-extension</string>
+		<string>com.apple.usernotifications.service</string>
 		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).NotificationViewController</string>
+		<string>$(PRODUCT_MODULE_NAME).NotificationService</string>
 	</dict>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Approve or reject agent access from this notification.</string>
 	<key>NotificationKeychainAccessGroup</key>
 	<string>$(AppIdentifierPrefix)ai.sawmills.keywarden.notifications</string>
 </dict>

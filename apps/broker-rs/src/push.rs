@@ -183,7 +183,7 @@ fn notification_request(
     client.post(format!("https://{host}/3/device/{device_token}"))
         .bearer_auth(token).header("apns-topic","ai.sawmills.keywarden").header("apns-push-type","alert")
         .header("apns-priority","10").header("apns-expiration",expiry.to_string()).header("apns-collapse-id",request_id)
-        .json(&serde_json::json!({"aps":{"alert":{"title":"Approval requested","body":"Tap to review the access request."},"sound":"default","category":"KEYWARDEN_APPROVAL"},"requestId":request_id}))
+        .json(&serde_json::json!({"aps":{"alert":{"title":"Approval requested","body":"Tap to review the access request."},"sound":"default","category":"KEYWARDEN_APPROVAL","mutable-content":1},"requestId":request_id}))
 }
 
 #[cfg(test)]
@@ -221,6 +221,8 @@ mod tests {
         let body: Value =
             serde_json::from_slice(first.body().unwrap().as_bytes().unwrap()).unwrap();
         assert_eq!(body["requestId"], "request-one");
+        assert_eq!(body["aps"]["mutable-content"], 1);
+        assert_eq!(body["aps"]["alert"]["title"], "Approval requested");
         assert!(body.get("vault").is_none());
         assert!(body.get("value").is_none());
     }

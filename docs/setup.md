@@ -117,6 +117,22 @@ keywarden status
 
 Apple acceptance does not prove that the phone displayed an alert. Test delivery on the physical iPhone.
 
+### Unlocked notification previews (build 16)
+
+In iOS Settings, select **Notifications → Keywarden → Show Previews → When Unlocked**.
+Keywarden Settings shows the current preview mode.
+
+New requests received while unlocked can show the agent, account, vaults, operations, and duration in the banner.
+The phone fetches the encrypted request and verifies the pinned broker signature before preparing this text.
+Apple and Cloudflare receive no readable scope through this feature. The preview includes no credential fields or free-text intent.
+
+Locked arrivals remain generic because the preview key requires an unlocked phone.
+iOS does not rerun the service extension when you unlock. Long-press those notifications for verified details.
+Always, Never, unavailable keys, changed pairing, failed verification, and network timeouts keep the generic alert.
+Changing iOS preview settings later changes how iOS displays previously delivered notification text.
+
+The Mac broker must include `mutable-content: 1` in the push payload. Update the broker with the iOS app.
+
 ### Expanded notifications (build 15)
 
 Open Keywarden once after installing build 15. The app prepares protected data for the notification extension.
@@ -154,7 +170,7 @@ The table marks completed changes. Other entries remain proposals.
 | Priority | Feature | Apple API | Product behavior and limits |
 | --- | --- | --- | --- |
 | Shipped in build 14 | Expanded notification details and decisions | [Notification content extension](https://developer.apple.com/documentation/usernotificationsui/customizing-the-appearance-of-notifications) | Show verified scope. Approve or reject here with fresh Face ID and signed Mac confirmation. |
-| 1 | Notification preparation | [Notification service extension](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications) | Prepare encrypted request data before display. Keep generic text when keys or network access are unavailable. |
+| Shipped in build 16 | Unlocked banner previews | [Notification service extension](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications) | Prepare encrypted request data before display. Keep generic text when keys or network access are unavailable. |
 | Shipped in build 11 | Remove completed alerts | [Delivered notification removal](https://developer.apple.com/documentation/usernotifications/unusernotificationcenter/removedeliverednotifications(withidentifiers:)) | Remove alerts after a decision without clearing unrelated requests. |
 | 2 | Active session countdown | [ActivityKit](https://developer.apple.com/documentation/activitykit) | Show duration and last confirmed state. Revocation opens the app for biometric authentication. |
 | 2 | Quick access | [WidgetKit controls](https://developer.apple.com/documentation/widgetkit/creating-controls-to-perform-actions-across-the-system) | Open pending requests from Control Center or the Lock Screen. Do not approve automatically. |

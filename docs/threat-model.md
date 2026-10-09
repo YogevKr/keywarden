@@ -12,7 +12,7 @@ QR pairing encrypts its challenge to the broker. The phone signs its public-key 
 
 The broker compares the decrypted challenge with its local setup record. The phone pins the broker keys from the QR.
 
-Apple receives a generic alert and a device token. The Mac holds the Apple signing key in memory.
+Apple receives a generic alert, request ID, mutable-content flag, and a device token. The Mac holds the Apple signing key in memory.
 
 ## Local access
 
@@ -53,7 +53,11 @@ The app verifies the pinned broker signature before it decrypts and displays a r
 It checks the encrypted request against the routing identifiers and expiry. It rejects a changed or unrelated request.
 
 Face ID protects approval, denial, and revocation. Keychain stores phone keys, the relay token, and approval history.
-The notification extension receives the phone decryption key, relay settings, encrypted request snapshots, and completed request IDs.
+The notification extensions receive the phone decryption key, relay settings, encrypted request snapshots, and completed request IDs.
+The service extension prepares banner text locally only when Keychain is unlocked and iOS uses When Unlocked previews.
+It verifies the request signature and identity, then rechecks the connection and protected storage after network access.
+A timeout or validation failure preserves the generic alert. The service extension never signs an approval.
+iOS controls visibility of delivered text after the user changes preview settings. Locked arrivals remain generic until expanded.
 A dedicated keychain group shares these records with `WhenUnlockedThisDeviceOnly` protection.
 The app retains its original signing key. The extension uses a separate copy protected with Keychain `biometryAny` access control.
 The copy uses `WhenUnlockedThisDeviceOnly` and the dedicated notification access group.

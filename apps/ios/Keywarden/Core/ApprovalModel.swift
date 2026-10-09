@@ -14,6 +14,7 @@ final class ApprovalModel: ObservableObject {
     @Published var showingScanner = false
     @Published var busyID: String?
     @Published var lastSync: Date?
+    @Published var notificationPreviewSetting: UNShowPreviewsSetting?
     @Published var notificationPermission: NotificationPermission = .checking
     @Published var notificationError: String?
     @Published var requestingNotifications = false
@@ -125,6 +126,7 @@ final class ApprovalModel: ObservableObject {
         #endif
         let state = await UNUserNotificationCenter.current().notificationSettings()
         notificationPermission = NotificationPermission(authorization: state.authorizationStatus, alerts: state.alertSetting)
+        notificationPreviewSetting = state.showPreviewsSetting
         if notificationPermission.canRegister { UIApplication.shared.registerForRemoteNotifications() }
     }
 

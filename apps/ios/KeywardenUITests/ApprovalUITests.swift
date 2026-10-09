@@ -1,6 +1,22 @@
 import XCTest
 
 final class ApprovalUITests: XCTestCase {
+    func testUnlockedNotificationBannerShowsVerifiedScope() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-fixture", "--notification-preview-fixture", "--banner-preview-fixture"]
+        app.launch()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 2) { allow.tap() }
+        XCTAssertTrue(app.buttons["approveRequest"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(springboard.staticTexts["Codex requests access"].waitForExistence(timeout: 15))
+        XCTAssertTrue(springboard.staticTexts["Agent"].exists)
+        XCTAssertTrue(springboard.staticTexts["Read · agents · 15 min"].exists)
+        XCTAssertNotEqual(app.state, .runningForeground)
+        capture("Unlocked notification preview")
+    }
+
     func testNotificationApproveAndRejectCloseAfterConfirmation() {
         for (action, reason) in [("Approve", "Access approved"), ("Reject", "Request rejected")] {
             let app = XCUIApplication()

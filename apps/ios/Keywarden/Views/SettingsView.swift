@@ -48,6 +48,8 @@ struct SettingsView: View {
                     .accessibilityLabel("iPhone permission")
                     .accessibilityValue(model.notificationPermission.title)
                     .accessibilityIdentifier("notificationPermission")
+                    LabeledContent("Request previews", value: model.notificationPreviewSetting == .whenAuthenticated ? "When unlocked" : "Generic alerts")
+                        .accessibilityIdentifier("notificationPreviews")
                     if model.notificationPermission == .notRequested {
                         Button { Task { await model.enableNotifications() } } label: {
                             HStack {
@@ -75,7 +77,8 @@ struct SettingsView: View {
                 } header: { Text("Notifications") } footer: {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(model.notificationPermission.guidance)
-                        Text("Alerts contain no vault names, item names, or secret values. Your Mac must remain online to send alerts.")
+                        Text("Set Show Previews to When Unlocked in iOS notification settings for request details. Locked arrivals show details when expanded.")
+                        Text("Previews show request scope, never credential fields. Your Mac must remain online to send alerts.")
                     }
                 }
 

@@ -67,6 +67,12 @@ final class NotificationDelegate: NSObject, UIApplicationDelegate, UNUserNotific
                     content.body = "Tap to review the access request."
                     content.categoryIdentifier = approvalCategory
                     content.userInfo = ["requestId": "request_fixture"]
+                    if ProcessInfo.processInfo.arguments.contains("--banner-preview-fixture") {
+                        try? await Task.sleep(for: .seconds(1))
+                        if let banner = try? await NotificationBannerLoader().banner(requestID: "request_fixture", previews: .whenAuthenticated) {
+                            content.title = banner.title; content.subtitle = banner.subtitle; content.body = banner.body
+                        }
+                    }
                     try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "keywarden-preview-fixture", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: 8, repeats: false)))
                 }
             }

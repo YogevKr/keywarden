@@ -22,6 +22,7 @@ targets:
       - path: Keywarden/Assets.xcassets
     dependencies:
       - target: NotificationContent
+      - target: NotificationService
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden
@@ -31,7 +32,7 @@ targets:
       path: Keywarden/Info.plist
       properties:
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "15"
+        CFBundleVersion: "16"
         NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
         UILaunchScreen: {}
         NSFaceIDUsageDescription: "Approve Keywarden agent sessions."
@@ -83,7 +84,7 @@ targets:
         CFBundleDisplayName: Keywarden
         NSFaceIDUsageDescription: "Approve or reject agent access from this notification."
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "15"
+        CFBundleVersion: "16"
         NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.content-extension
@@ -95,6 +96,39 @@ targets:
             UNNotificationExtensionUserInteractionEnabled: true
     entitlements:
       path: NotificationContent/NotificationContent.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
+  NotificationService:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: NotificationService
+      - path: Keywarden/Core/Base64URL.swift
+      - path: Keywarden/Core/CryptoBox.swift
+      - path: Keywarden/Core/KeychainStore.swift
+      - path: Keywarden/Core/Models.swift
+      - path: Keywarden/Core/RelayClient.swift
+      - path: Keywarden/Core/NotificationPreview.swift
+      - path: Keywarden/Core/NotificationBanner.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden.notification-service
+        CODE_SIGN_STYLE: Automatic
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        CFBundleDisplayName: Keywarden
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "16"
+        NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    entitlements:
+      path: NotificationService/NotificationService.entitlements
       properties:
         keychain-access-groups:
           - $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
