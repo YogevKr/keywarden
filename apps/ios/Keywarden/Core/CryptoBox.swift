@@ -5,10 +5,12 @@ final class CryptoBox {
     private let keychain: KeychainStore
     private let encoder: JSONEncoder
     private let decryptionKey: Data?
+    private let signingKey: Data?
 
-    init(keychain: KeychainStore = KeychainStore(), decryptionKey: Data? = nil) {
+    init(keychain: KeychainStore = KeychainStore(), decryptionKey: Data? = nil, signingKey: Data? = nil) {
         self.keychain = keychain
         self.decryptionKey = decryptionKey
+        self.signingKey = signingKey
         self.encoder = JSONEncoder()
         self.encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
     }
@@ -90,6 +92,7 @@ final class CryptoBox {
     }
 
     private func signingPrivateKey() throws -> P256.Signing.PrivateKey {
+        if let signingKey { return try P256.Signing.PrivateKey(rawRepresentation: signingKey) }
         if let data = try keychain.load("signing-private") {
             return try P256.Signing.PrivateKey(rawRepresentation: data)
         }
@@ -111,6 +114,11 @@ final class CryptoBox {
     // Only the decryption key is shared with the notification extension.
     func notificationDecryptionKey() throws -> Data {
         try encryptionPrivateKey().rawRepresentation
+    }
+
+    // Only store this copy behind biometric Keychain access control.
+    func notificationSigningKey() throws -> Data {
+        try signingPrivateKey().rawRepresentation
     }
 
     private func publicJWK(from x963: Data) throws -> JWK {

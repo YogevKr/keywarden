@@ -117,17 +117,21 @@ keywarden status
 
 Apple acceptance does not prove that the phone displayed an alert. Test delivery on the physical iPhone.
 
-### Expanded notifications (build 11)
+### Expanded notifications (build 13)
 
-Open Keywarden once after installing build 11. The app prepares protected data for the notification extension.
+Open Keywarden once after installing build 13. The app prepares protected data for the notification extension.
 Long-press a new notification to see the verified agent, session, account, vaults, items, operations, duration, and reason.
 
-- **Approve** opens that request and starts biometric confirmation.
-- **Reject** opens that request and starts biometric confirmation for rejection.
+- **Approve** runs fresh Face ID inside the expanded notification. The main app stays closed.
+- **Reject** runs fresh Face ID inside the expanded notification before sending a denial.
 - **More details** opens the full request without starting a decision.
 
-The app checks the exact request again before approval. An unavailable request never opens a different pending request.
-Completed decisions remove the matching notification. Cancelling Face ID sends no decision.
+The extension checks the exact request, connection, and expiry again after Face ID.
+It shows success only after verifying confirmation signed by the Mac.
+Cancelling Face ID sends no decision. Device unlock alone cannot approve access.
+The main app imports notification decisions into history when it next polls.
+A failed connection shows an unconfirmed decision. Repeating the same action reuses the signed decision.
+If iOS cannot run the extension, open the request in Keywarden. Background fallback never signs a decision.
 
 The extension first checks locally cached encrypted requests. It can fetch encrypted requests with a short timeout.
 It verifies the broker signature and request identity before displaying any scope.
@@ -135,9 +139,11 @@ Locked keychain data, missing setup, network errors, invalid signatures, and exp
 Open the app for the current status when preview details are unavailable.
 
 The main app and extension share a dedicated keychain group for preview configuration and the phone decryption key.
-These records use `WhenUnlockedThisDeviceOnly`. The approval signing key and approval history stay in the app's private group.
-The extension cannot sign decisions. Apple receives a generic alert and request ID; Cloudflare receives encrypted request bodies.
-An expanded preview can show an earlier pending snapshot. The app rechecks availability before biometric confirmation.
+These records use `WhenUnlockedThisDeviceOnly`. A separate shared signing-key copy also requires biometric Keychain access.
+Each decision uses a fresh `LAContext` with biometric reuse disabled and no passcode fallback.
+The extension saves an encrypted signed decision and its receipt before sending, so interrupted delivery can be retried.
+Apple receives a generic alert and request ID. Cloudflare receives encrypted requests and decisions.
+An expanded preview can show an earlier pending snapshot. The Mac remains authoritative for request and session state.
 
 ### iOS UX follow-ups
 
@@ -145,7 +151,7 @@ The table marks completed changes. Other entries remain proposals.
 
 | Priority | Feature | Apple API | Product behavior and limits |
 | --- | --- | --- | --- |
-| Shipped in build 11 | Expanded notification details | [Notification content extension](https://developer.apple.com/documentation/usernotificationsui/customizing-the-appearance-of-notifications) | Show verified request scope after unlock. Open Keywarden for biometric approval. |
+| Shipped in build 13 | Expanded notification details and decisions | [Notification content extension](https://developer.apple.com/documentation/usernotificationsui/customizing-the-appearance-of-notifications) | Show verified scope. Approve or reject here with fresh Face ID and signed Mac confirmation. |
 | 1 | Notification preparation | [Notification service extension](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications) | Prepare encrypted request data before display. Keep generic text when keys or network access are unavailable. |
 | Shipped in build 11 | Remove completed alerts | [Delivered notification removal](https://developer.apple.com/documentation/usernotifications/unusernotificationcenter/removedeliverednotifications(withidentifiers:)) | Remove alerts after a decision without clearing unrelated requests. |
 | 2 | Active session countdown | [ActivityKit](https://developer.apple.com/documentation/activitykit) | Show duration and last confirmed state. Revocation opens the app for biometric authentication. |
@@ -154,7 +160,7 @@ The table marks completed changes. Other entries remain proposals.
 | 3 | Urgent alerts | [Time Sensitive notifications](https://developer.apple.com/documentation/usernotifications/unnotificationinterruptionlevel/timesensitive) | Offer an opt-in for short-lived requests. Respect the user's Focus controls. |
 
 The current phone keys use `WhenUnlockedThisDeviceOnly` storage. Keep that protection when adding extensions.
-The content extension uses a dedicated keychain group. Do not copy decision-signing keys into notification payloads or shared storage.
+The content extension uses a dedicated keychain group. Store its signing-key copy only in biometric-protected Keychain storage. Never include keys in notification payloads.
 Cloudflare must continue receiving encrypted requests only. Apple must not receive plaintext secrets or request scope.
 The content extension should render available data immediately; it must not depend on a long network request.
 Device unlock alone does not replace Keywarden's biometric decision check.

@@ -51,10 +51,9 @@ final class NotificationDelegate: NSObject, UIApplicationDelegate, UNUserNotific
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
-        // Foreground actions already require device unlock. The app performs
-        // a fresh biometric check before it signs either decision.
-        let approve = UNNotificationAction(identifier: NotificationAction.approve.rawValue, title: "Approve", options: [.foreground])
-        let reject = UNNotificationAction(identifier: NotificationAction.reject.rawValue, title: "Reject", options: [.foreground, .destructive])
+        // The extension performs a fresh biometric check and signs locally.
+        let approve = UNNotificationAction(identifier: NotificationAction.approve.rawValue, title: "Approve", options: [.authenticationRequired])
+        let reject = UNNotificationAction(identifier: NotificationAction.reject.rawValue, title: "Reject", options: [.authenticationRequired, .destructive])
         let review = UNNotificationAction(identifier: NotificationAction.review.rawValue, title: "More details", options: [.foreground])
         let category = UNNotificationCategory(identifier: approvalCategory, actions: [approve, reject, review], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
@@ -94,6 +93,17 @@ final class NotificationDelegate: NSObject, UIApplicationDelegate, UNUserNotific
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         guard let route = NotificationRoute(requestID: requestID(from: response.notification), actionIdentifier: response.actionIdentifier) else { return }
+        // A system action can reach the background app without loading the content extension.
+        // Do not treat device unlock as approval or sign without fresh biometrics.
+        let foreground = await MainActor.run { UIApplication.shared.applicationState == .active }
+        if route.action != .review && !foreground {
+            let content = UNMutableNotificationContent()
+            content.title = "Open Keywarden to finish"
+            content.body = "No decision was sent. Expand the request to approve with Face ID, or open Keywarden."
+            content.userInfo = ["requestId": route.requestID]
+            try? await center.add(UNNotificationRequest(identifier: "keywarden-review-\(route.requestID)", content: content, trigger: nil))
+            return
+        }
         await MainActor.run { NotificationInbox.shared.receive(route) }
     }
 

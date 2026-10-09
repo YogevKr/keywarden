@@ -5,6 +5,10 @@ struct NotificationPreviewContext: Codable {
     let decryptionKey: Data
     let requests: [RelayRequest]
     let completedRequestIDs: [String]
+    var signingKeyID: String? = nil
+    #if DEBUG
+    var usesRealBiometrics: Bool? = nil
+    #endif
 }
 
 struct NotificationPreviewStore {

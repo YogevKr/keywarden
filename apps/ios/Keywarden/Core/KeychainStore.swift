@@ -45,6 +45,26 @@ final class KeychainStore {
         }
         return data
     }
+
+    func allData() throws -> [Data] {
+        var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service, kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll]
+        if let accessGroup { query[kSecAttrAccessGroup as String] = accessGroup }
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound { return [] }
+        guard status == errSecSuccess, let values = result as? [Data] else { throw KeywardenError.keychain(status) }
+        return values
+    }
+
+    func remove(_ key: String) throws {
+        var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service, kSecAttrAccount as String: key]
+        if let accessGroup { query[kSecAttrAccessGroup as String] = accessGroup }
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else { throw KeywardenError.keychain(status) }
+    }
 }
 
 enum KeywardenError: LocalizedError {

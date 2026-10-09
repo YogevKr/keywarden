@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>12</string>
+	<string>13</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
@@ -38,6 +38,8 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).NotificationViewController</string>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Approve or reject agent access from this notification.</string>
 	<key>NotificationKeychainAccessGroup</key>
 	<string>$(AppIdentifierPrefix)ai.sawmills.keywarden.notifications</string>
 </dict>

@@ -6,6 +6,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: 5.9
+    ENABLE_DEBUG_DYLIB: NO
     DEVELOPMENT_TEAM: ""
     APS_ENVIRONMENT: development
   configs:
@@ -30,7 +31,7 @@ targets:
       path: Keywarden/Info.plist
       properties:
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "12"
+        CFBundleVersion: "13"
         NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
         UILaunchScreen: {}
         NSFaceIDUsageDescription: "Approve Keywarden agent sessions."
@@ -67,6 +68,8 @@ targets:
       - path: Keywarden/Core/Models.swift
       - path: Keywarden/Core/RelayClient.swift
       - path: Keywarden/Core/NotificationPreview.swift
+      - path: Keywarden/Core/NotificationApproval.swift
+      - path: Keywarden/Core/NotificationApprovalFixture.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden.notification-content
@@ -78,8 +81,9 @@ targets:
       path: NotificationContent/Info.plist
       properties:
         CFBundleDisplayName: Keywarden
+        NSFaceIDUsageDescription: "Approve or reject agent access from this notification."
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "12"
+        CFBundleVersion: "13"
         NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.content-extension

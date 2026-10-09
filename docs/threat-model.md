@@ -55,9 +55,16 @@ It checks the encrypted request against the routing identifiers and expiry. It r
 Face ID protects approval, denial, and revocation. Keychain stores phone keys, the relay token, and approval history.
 The notification extension receives the phone decryption key, relay settings, encrypted request snapshots, and completed request IDs.
 A dedicated keychain group shares these records with `WhenUnlockedThisDeviceOnly` protection.
-The app's private keychain group retains the decision-signing key and approval history.
-The extension verifies pinned broker signatures before rendering. Notification actions return to the app for biometric confirmation.
-The app reloads the exact requested ID. Missing or expired requests never fall back to another request.
+The app retains its original signing key. The extension uses a separate copy protected with Keychain `biometryAny` access control.
+The copy uses `WhenUnlockedThisDeviceOnly` and the dedicated notification access group.
+Every decision starts a fresh biometric-only `LAContext`. The context disables authentication reuse and passcode fallback.
+The extension verifies the request before authentication, then rechecks connection settings, completed IDs, and expiry afterward.
+Only a verified broker status can produce an approval or denial confirmation. Device unlock alone cannot authorize a decision.
+The extension saves a receipt before sending. Retries reuse that signed decision and cannot switch its approval result.
+The main app imports receipts into history. An unconfirmed receipt never appears as confirmed access or denial.
+Notification actions stay inside the extension. More details opens the main app.
+If iOS forwards an action to the background app, the app asks for review without signing.
+Missing or expired requests never fall back to another request.
 
 The app distinguishes approval sent, broker-confirmed access, revocation pending, revoked access, and expired access.
 

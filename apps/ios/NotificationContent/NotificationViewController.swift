@@ -1,12 +1,22 @@
 import UIKit
 import UserNotifications
 import UserNotificationsUI
+import LocalAuthentication
 
 final class NotificationViewController: UIViewController, UNNotificationContentExtension {
     private let stack = UIStackView()
     private let scroll = UIScrollView()
     private var loadTask: Task<Void, Never>?
     private var expiryTask: Task<Void, Never>?
+    private var decisionTask: Task<Void, Never>?
+    private var displayedRequest: SessionRequest?
+    private var displayedHash: String?
+    private lazy var approval: NotificationApproval = {
+        #if DEBUG
+        if let fixture = NotificationApprovalFixture.approval() { return fixture }
+        #endif
+        return NotificationApproval()
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,6 +44,9 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
     func didReceive(_ notification: UNNotification) {
         loadViewIfNeeded()
         loadTask?.cancel()
+        decisionTask?.cancel()
+        displayedRequest = nil
+        displayedHash = nil
         expiryTask?.cancel()
         showMessage("Checking request", "Loading verified details…")
         loadTask = Task { @MainActor [weak self] in
@@ -53,6 +66,8 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
                       current.settings.brokerSigningPublicJWK == context.settings.brokerSigningPublicJWK,
                       !current.completedRequestIDs.contains(id) else { throw KeywardenError.requestExpired }
                 self.show(request)
+                self.displayedRequest = request
+                self.displayedHash = try CryptoBox(decryptionKey: context.decryptionKey).hash(request)
             } catch is CancellationError { return }
               catch KeywardenError.requestExpired {
                 self.showMessage("Request unavailable", "This request expired or already has a decision. Open Keywarden for its status.")
@@ -65,13 +80,41 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
     }
 
     func didReceive(_ response: UNNotificationResponse, completionHandler completion: @escaping (UNNotificationContentExtensionResponseOption) -> Void) {
-        completion(.dismissAndForwardAction)
+        if response.actionIdentifier == "KEYWARDEN_REVIEW" { completion(.dismissAndForwardAction); return }
+        completion(.doNotDismiss)
+        guard decisionTask == nil, let request = displayedRequest, let hash = displayedHash,
+              response.notification.request.content.userInfo["requestId"] as? String == request.id,
+              ["KEYWARDEN_APPROVE", "KEYWARDEN_REJECT"].contains(response.actionIdentifier) else { return }
+        expiryTask?.cancel()
+        let decision = response.actionIdentifier == "KEYWARDEN_APPROVE" ? "approve" : "deny"
+        decisionTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.decisionTask = nil }
+            do {
+                let record = try await self.approval.decide(requestID: request.id, decision: decision, displayedHash: hash)
+                try Task.checkCancellation()
+                self.displayedRequest = nil
+                self.displayedHash = nil
+                self.extensionContext?.notificationActions = self.extensionContext?.notificationActions.filter { $0.identifier == "KEYWARDEN_REVIEW" } ?? []
+                switch record.session?.status {
+                case "active": self.showMessage("Access approved", "Your Mac confirmed access. Open More details to manage this session.")
+                case "denied": self.showMessage("Request rejected", "Your Mac confirmed that access was denied.")
+                default: self.showMessage("Access unavailable", "This request expired, was cancelled, or was revoked. Open Keywarden for its status.")
+                }
+            } catch is CancellationError { return }
+              catch let error as LAError where [.userCancel, .systemCancel, .appCancel].contains(error.code) {
+                self.show(request)
+            } catch {
+                self.showMessage("Decision not confirmed", error.localizedDescription)
+            }
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         loadTask?.cancel()
         expiryTask?.cancel()
+        decisionTask?.cancel()
         clear()
     }
 
@@ -112,7 +155,7 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
         row("Allows", request.scope.operations.map { $0.capitalized }.joined(separator: ", "))
         row("Duration", "\(request.durationSeconds / 60) min · Idle limit: \(request.idleTimeoutSeconds / 60) min")
         row("Reason", request.intent?.reason ?? request.reason)
-        stack.addArrangedSubview(label("Approve or Reject opens Face ID confirmation. More details opens the full request.", style: .footnote, color: .secondaryLabel))
+        stack.addArrangedSubview(label("Approve or Reject uses Face ID here. More details opens Keywarden.", style: .footnote, color: .secondaryLabel))
         resize()
         let delay = max(0, (parseDate(request.expiresAt) ?? .distantPast).timeIntervalSinceNow)
         expiryTask = Task { @MainActor [weak self] in

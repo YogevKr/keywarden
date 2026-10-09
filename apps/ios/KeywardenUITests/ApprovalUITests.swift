@@ -1,8 +1,8 @@
 import XCTest
 
 final class ApprovalUITests: XCTestCase {
-    func testNotificationApproveAndRejectReachBiometricConfirmation() {
-        for (action, reason) in [("Approve", "Approve access for Codex"), ("Reject", "Deny this access request")] {
+    func testNotificationApproveAndRejectStayInsideNotification() {
+        for (action, reason) in [("Approve", "Access approved"), ("Reject", "Request rejected")] {
             let app = XCUIApplication()
             app.launchArguments = ["--ui-fixture", "--notification-preview-fixture"]
             app.launch()
@@ -16,12 +16,33 @@ final class ApprovalUITests: XCTestCase {
             notification.press(forDuration: 1.5)
             XCTAssertTrue(springboard.buttons[action].waitForExistence(timeout: 5))
             springboard.buttons[action].tap()
-            XCTAssertTrue(app.navigationBars["Approval details"].waitForExistence(timeout: 8))
-            let expected = "Could not send your decision. Notification test: \(reason)"
-            XCTAssertTrue(app.staticTexts[expected].waitForExistence(timeout: 5))
+            XCTAssertTrue(springboard.staticTexts[reason].waitForExistence(timeout: 10))
+            XCTAssertNotEqual(app.state, .runningForeground)
             capture("Notification \(action) confirmation")
             app.terminate()
         }
+    }
+
+    func testRealFaceIDWithinNotification() throws {
+        guard ProcessInfo.processInfo.environment["KEYWARDEN_REAL_FACEID_TEST"] == "1" else {
+            throw XCTSkip("Run with simulated Face ID enrollment and match controls.")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-fixture", "--notification-preview-fixture", "--real-notification-faceid"]
+        app.launch()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 2) { allow.tap() }
+        XCTAssertTrue(app.buttons["approveRequest"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        let notification = springboard.staticTexts["Approval requested"].firstMatch
+        XCTAssertTrue(notification.waitForExistence(timeout: 20))
+        notification.press(forDuration: 1.5)
+        XCTAssertTrue(springboard.staticTexts["Account"].waitForExistence(timeout: 10))
+        springboard.buttons["Approve"].tap()
+        XCTAssertTrue(springboard.staticTexts["Access approved"].waitForExistence(timeout: 60))
+        XCTAssertNotEqual(app.state, .runningForeground)
+        capture("Real Face ID inline approval")
     }
 
     func testExpandedNotificationShowsVerifiedScopeAndOpensExactRequest() {

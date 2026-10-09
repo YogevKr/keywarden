@@ -25,17 +25,19 @@ final class ApprovalModel: ObservableObject {
     private let crypto: CryptoBox
     private let keychain: KeychainStore
     private let defaults: UserDefaults
+    private let notificationDecisions: NotificationDecisionStore
     private let authentication: ((String) async throws -> Void)?
     private let settingsKey = "keywarden.settings"
     private var timer: Task<Void, Never>?
     private var refreshing = false
 
-    init(relay: RelayClient = RelayClient(), crypto: CryptoBox = CryptoBox(), keychain: KeychainStore = KeychainStore(), defaults: UserDefaults = .standard, authentication: ((String) async throws -> Void)? = nil) {
+    init(relay: RelayClient = RelayClient(), crypto: CryptoBox = CryptoBox(), keychain: KeychainStore = KeychainStore(), defaults: UserDefaults = .standard, authentication: ((String) async throws -> Void)? = nil, notificationDecisions: NotificationDecisionStore = NotificationDecisionStore()) {
         self.relay = relay
         self.crypto = crypto
         self.keychain = keychain
         self.defaults = defaults
         self.authentication = authentication
+        self.notificationDecisions = notificationDecisions
         if let data = defaults.data(forKey: settingsKey), let saved = try? JSONDecoder().decode(Settings.self, from: data) { settings = saved }
         do {
             if let data = try keychain.load("relay-token"), let token = String(data: data, encoding: .utf8) { settings.relayToken = token }
@@ -149,11 +151,13 @@ final class ApprovalModel: ObservableObject {
         do {
             if settings.relayToken.isEmpty, let data = try keychain.load("relay-token"),
                let token = String(data: data, encoding: .utf8) { settings.relayToken = token }
+            let signingKeyID = settings.isConfigured ? try? NotificationSigningStore().prepare(crypto: crypto) : nil
             try NotificationPreviewStore().save(NotificationPreviewContext(
                 settings: settings,
                 decryptionKey: settings.isConfigured ? try crypto.notificationDecryptionKey() : Data(),
                 requests: requests.map(\.relayRequest),
-                completedRequestIDs: history.filter { $0.brokerID == settings.brokerID }.map(\.id)
+                completedRequestIDs: history.filter { $0.brokerID == settings.brokerID }.map(\.id),
+                signingKeyID: signingKeyID
             ))
         } catch { notificationError = "Could not prepare notification previews. Open Keywarden while your phone is unlocked." }
     }
@@ -171,6 +175,15 @@ final class ApprovalModel: ObservableObject {
         }
         let connection = settings
         do {
+            for record in try notificationDecisions.records(settings: connection) {
+                if let index = history.firstIndex(where: { $0.id == record.id && $0.brokerID == record.brokerID }) {
+                    let old = history[index].session.flatMap { parseDate($0.observedAt) } ?? .distantPast
+                    let new = record.session.flatMap { parseDate($0.observedAt) } ?? .distantPast
+                    if new > old { history[index].session = record.session }
+                } else { history.append(record) }
+            }
+            history.sort { $0.decidedAt > $1.decidedAt }
+            try saveHistory()
             let pinnedKey = try JSONDecoder().decode(JWK.self, from: Data(connection.brokerSigningPublicJWK.utf8))
             let received = try await relay.pendingRequests(settings: connection)
             guard connection.brokerID == settings.brokerID, !Task.isCancelled else { return }

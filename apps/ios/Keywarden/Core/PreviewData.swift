@@ -29,12 +29,12 @@ extension ApprovalModel {
             }
             model.history = [
                 ApprovalRecord(brokerID: "broker_fixture", request: request("old_approved", reason: "Check the test connection."), requestHash: "fixture", decision: "approve", decidedAt: Date().addingTimeInterval(-3600), session: SessionStatus(version: 1, type: "session_status", requestId: "old_approved", requestHash: "fixture", status: "expired", issuedAt: nil, expiresAt: nil, idleUntil: nil, observedAt: formatter.string(from: Date()))),
-                ApprovalRecord(brokerID: "broker_fixture", request: request("old_denied", reason: "Requested access was too broad."), requestHash: "fixture", decision: "deny", decidedAt: Date().addingTimeInterval(-7200))
+                ApprovalRecord(brokerID: "broker_fixture", request: request("old_denied", reason: "Requested access was too broad."), requestHash: "fixture", decision: "deny", decidedAt: Date().addingTimeInterval(-7200), session: SessionStatus(version: 1, type: "session_status", requestId: "old_denied", requestHash: "fixture", status: "denied", issuedAt: nil, expiresAt: nil, idleUntil: nil, observedAt: formatter.string(from: Date())))
             ]
             if arguments.contains("--notification-preview-fixture") {
                 do {
-                    let broker = CryptoBox(keychain: KeychainStore(service: "keywarden.notification-fixture.broker"))
-                    let phone = CryptoBox(keychain: KeychainStore(service: "keywarden.notification-fixture.phone"))
+                    let broker = NotificationApprovalFixture.broker()
+                    let phone = NotificationApprovalFixture.phone()
                     model.settings.brokerSigningPublicJWK = String(decoding: try JSONEncoder().encode(broker.signingPublicKey()), as: UTF8.self)
                     model.settings.brokerEncryptionPublicJWK = String(decoding: try JSONEncoder().encode(broker.encryptionPublicKey()), as: UTF8.self)
                     var preview = current
@@ -42,7 +42,10 @@ extension ApprovalModel {
                     let signed = try broker.sign(preview, kind: "session_request", for: phone.encryptionPublicKey())
                     let item = RelayRequest(requestId: preview.id, phoneId: preview.phoneId, expiresAt: preview.expiresAt, envelope: signed)
                     model.requests = [DecodedRequest(relayRequest: item, request: preview)]
-                    try NotificationPreviewStore().save(NotificationPreviewContext(settings: model.settings, decryptionKey: phone.notificationDecryptionKey(), requests: [item], completedRequestIDs: []))
+                    var context = try NotificationPreviewContext(settings: model.settings, decryptionKey: phone.notificationDecryptionKey(), requests: [item], completedRequestIDs: [], signingKeyID: NotificationSigningStore().prepare(crypto: phone))
+                    context.usesRealBiometrics = arguments.contains("--real-notification-faceid")
+                    try NotificationDecisionStore().removeFixture(settings: model.settings, request: preview.id)
+                    try NotificationPreviewStore().save(context)
                 } catch { model.errorMessage = "Could not prepare the notification test." }
             }
             return model

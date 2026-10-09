@@ -141,7 +141,7 @@ struct ApprovalDecision: Codable {
     let nonce: String
 }
 
-struct Settings: Codable {
+struct Settings: Codable, Equatable {
     var relayURL: String = ""
     var relayToken: String = ""
     var brokerID: String = ""
@@ -188,14 +188,13 @@ struct ApprovalRecord: Codable, Identifiable {
 
     func state(at date: Date = Date()) -> String {
         if let session {
-            if ["revoked", "expired", "denied"].contains(session.status) { return session.status }
+            if ["revoked", "expired", "denied", "cancelled"].contains(session.status) { return session.status }
             if let expiry = session.expiresAt.flatMap(parseDate), expiry <= date { return "expired" }
             if revokeRequested { return "revoking" }
             if let idle = session.idleUntil.flatMap(parseDate), idle <= date { return "confirming" }
             if session.status == "active", let observed = parseDate(session.observedAt), date.timeIntervalSince(observed) <= 20 { return "active" }
         }
         if revokeRequested { return "revoking" }
-        if decision == "deny" { return "denied" }
         if let requestedExpiry = parseDate(request.expiresAt), date >= requestedExpiry.addingTimeInterval(Double(request.durationSeconds)) { return "expired" }
         return "confirming"
     }
