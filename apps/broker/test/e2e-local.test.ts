@@ -105,6 +105,13 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       const initialized = await mcp.initialize({ name: "codex", version: "0.160.0", title: "Deploy API" });
       assert.equal(initialized.serverInfo.title, "Keywarden 1Password for Codex");
       assert.equal((await mcp.request("tools/list")).tools.length, 7);
+      const overview = await mcp.call("keywarden_access_status");
+      assert.equal(overview.isError, false);
+      assert.equal(overview.structuredContent.status, "ready");
+      assert.equal(overview.structuredContent.accounts[0].status, "active");
+      assert.equal(overview.structuredContent.accounts[1].status, "approval_required");
+      assert.equal(overview.structuredContent.providerVerified, false);
+      assert.equal(relayEntries.size, 0);
       const vaults = await mcp.call("keywarden_list_vaults");
       assert.equal(vaults.isError, false, vaults.content?.[0]?.text);
       assert.deepEqual(vaults.structuredContent.vaults, [{id:"agents-vaultid",name:"agents"}]);
@@ -128,36 +135,46 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       assert.equal(directAccess.structuredContent.client.displayName, "Codex");
 
       const automatic = await mcp.call("keywarden_list_items", { vault: "agents", account: "personal", waitSeconds: 0 });
-      assert.equal(automatic.isError, true);
-      assert.equal(automatic.structuredContent.error.code, "approval_required");
-      const automaticRequestId = automatic.structuredContent.error.requestId;
+      assert.equal(automatic.isError, false);
+      assert.equal(automatic.structuredContent.status, "pending");
+      const automaticRequestId = automatic.structuredContent.requestId;
       assert.ok(automaticRequestId);
       const automaticEntry = await waitForRelayRequest(relayEntries, automaticRequestId);
       const automaticRequest = JSON.parse(await decryptWithPrivateKey(automaticEntry.envelope.body, phonePrivateKey)) as { scope: { accounts: string[]; vaults: string[]; items: string; operations: string[] } };
       assert.deepEqual(automaticRequest.scope, { accounts: ["personal"], vaults: ["agents"], items: "all", operations: ["list"] });
 
       const repeated = await mcp.call("keywarden_list_items", { vault: "agents", account: "personal", waitSeconds: 0 });
-      assert.equal(repeated.isError, true);
-      assert.equal(repeated.structuredContent.error.code, "approval_required");
-      assert.equal(repeated.structuredContent.error.requestId, automaticRequestId);
-      assert.equal(relayEntries.size, 1);
+      assert.equal(repeated.isError, false);
+      assert.equal(repeated.structuredContent.status, "pending");
+      assert.equal(repeated.structuredContent.requestId, automaticRequestId);
+      const pendingOverview = await mcp.call("keywarden_access_status");
+      assert.equal(pendingOverview.structuredContent.accounts[1].status, "pending");
+      assert.equal(pendingOverview.structuredContent.accounts[1].pendingRequests[0].requestId, automaticRequestId);
+      const pendingRead = await mcp.call("keywarden_read_secret", { reference: "op://agents/item-1/password", account: "personal", waitSeconds: 0 });
+      assert.equal(pendingRead.isError, false);
+      assert.equal(pendingRead.structuredContent.status, "pending");
+      assert.equal(pendingRead.structuredContent.value, undefined);
+      assert.equal(JSON.stringify(pendingRead).includes(secretValue), false);
+      await mcp.call("keywarden_manage_request", { requestId: pendingRead.structuredContent.requestId, action: "cancel" });
+      assert.equal(relayEntries.size, 2);
 
       await mcp.close();
       mcp = new McpClient(rustBinary, socketPath);
       await mcp.initialize({ name: "codex", version: "0.160.0", title: "Deploy API" });
       const repeatedAfterProcessRestart = await mcp.call("keywarden_list_items", { vault: "agents", account: "personal", waitSeconds: 0 });
-      assert.equal(repeatedAfterProcessRestart.isError, true);
-      assert.equal(repeatedAfterProcessRestart.structuredContent.error.code, "approval_required");
-      assert.equal(repeatedAfterProcessRestart.structuredContent.error.requestId, automaticRequestId);
-      assert.equal(relayEntries.size, 1);
+      assert.equal(repeatedAfterProcessRestart.isError, false);
+      assert.equal(repeatedAfterProcessRestart.structuredContent.status, "pending");
+      assert.equal(repeatedAfterProcessRestart.structuredContent.requestId, automaticRequestId);
+      assert.equal(relayEntries.size, 2);
     }
 
-    type Pending = { request: { id: string; scope: { items: "all" | string[] }; intent?: { task?: string }; client?: { product: string; displayName: string; sessionName?: string } }; requestHash: string };
+    type Pending = { request: { id: string; scope: { items: "all" | string[] }; intent?: { task?: string }; client?: { product: string; displayName: string; sessionName?: string; sessionId?: string } }; requestHash: string };
     let pending: Pending;
     if (mcp) {
       const request = await mcp.call("keywarden_request_access", {
         account, vaults: ["agents"], durationSeconds: 30, idleTimeoutSeconds: 10,
-        reason: "Read the deployment credential", task: "Deploy the API", sessionName: "Deploy API run #5", agent: "codex", host: "MacBook",
+        reason: "Read the deployment credential", task: "Deploy the API", sessionName: "Deploy API run #5",
+        sessionId: "synthetic-session-5", agent: "codex", host: "MacBook",
       });
       assert.equal(request.isError, false);
       assert.equal(request.structuredContent.status, "pending");
@@ -195,6 +212,7 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       assert.equal(request.intent?.task, "Deploy the API");
       assert.equal(request.client?.product, "codex");
       assert.equal(request.client?.displayName, "Codex");
+      assert.equal(request.client?.sessionId, "synthetic-session-5");
       assert.equal(request.client?.sessionName, "Deploy API run #5");
     }
     assert.equal(await hashRequest(request as never), pending.requestHash);
@@ -239,6 +257,7 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
         reason: "Read the deployment credential",
         task: "Deploy the API",
         sessionName: "Deploy API run #5",
+        sessionId: "synthetic-session-5",
         agent: "codex",
         host: "MacBook",
       });
@@ -247,8 +266,11 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       assert.equal(reused.structuredContent.requestId, pending.request.id);
       assert.equal(reused.structuredContent.leaseId, approved.leaseId);
 
-      const access = await mcp.call("keywarden_access_status", { waitSeconds: 2 });
+      const access = await mcp.call("keywarden_access_status", { requestId: pending.request.id, waitSeconds: 2 });
       assert.equal(access.structuredContent.status, "active");
+      const current = await mcp.call("keywarden_access_status");
+      assert.equal(current.structuredContent.accounts[1].status, "active");
+      assert.ok(current.structuredContent.accounts[1].leases.some((lease: any) => lease.leaseId === approved.leaseId));
       const read = await mcp.call("keywarden_read_secret", { reference: "op://agents/item-1/password", account: "personal" });
       assert.equal(read.isError, false);
       assert.equal(read.structuredContent.value, secretValue);
@@ -383,7 +405,9 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       const simpleRequest = await socketJSON<Pending>(socketPath, "GET", `/v1/session-requests/${simpleError.requestId}`);
       assert.equal(simpleRequest.request.client?.displayName, "Codex");
       const simpleReuse = await mcp.call("keywarden_list_items", { account: "personal", vault: "simple-vault", waitSeconds: 0 });
-      assert.equal(simpleReuse.structuredContent.error.requestId, simpleError.requestId);
+      assert.equal(simpleReuse.isError, false);
+      assert.equal(simpleReuse.structuredContent.status, "pending");
+      assert.equal(simpleReuse.structuredContent.requestId, simpleError.requestId);
       const simpleWaiting = runCLI(rustBinary!, socketPath, [...simpleArgs, "--wait", "10"]);
       await sleep(300);
       const simpleDecision = { ...decision, requestId: simpleError.requestId, requestHash: simpleRequest.requestHash, nonce: "simple-command-decision" };

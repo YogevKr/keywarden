@@ -44,7 +44,9 @@ The MCP handshake identifies the client. Keywarden maps client names to `Codex`,
 
 Codex and Claude Code do not define a standard MCP session-name field. Keywarden uses an available client title or these optional environment variables: `CODEX_SESSION_NAME`, `CLAUDE_SESSION_NAME`, and `MCP_SESSION_NAME`. It uses the matching session ID variables when present.
 
-The agent can pass `sessionName` when it knows a session label that the MCP host does not expose. Keywarden treats this value as display metadata.
+The agent can pass `sessionId` and `sessionName` to `keywarden_request_access` when the host omits those values.
+Use actual session values. Do not invent them. Keywarden treats supplied values as display metadata, not access authority.
+A product title such as `Codex` is not a session name. Missing session values remain null.
 
 ## Tool flow
 
@@ -68,7 +70,22 @@ Rust broker ── lease check ── opgate ── 1Password
 
 The tools wait up to 25 seconds by default. Set `waitSeconds` to zero for an immediate result.
 Every MCP `waitSeconds` field accepts integers from zero through 25. A value of 30 returns `invalid_wait`.
-The pending response includes `requestId` and a next action in `structuredContent.error`.
+Pending approval returns `isError: false` and this structured result:
+
+```json
+{
+  "status": "pending",
+  "requestId": "request_example",
+  "delivery": {"phoneReceipt": "unconfirmed"},
+  "retryAfterSeconds": 2,
+  "next": "Approve on your phone, then repeat the same tool call."
+}
+```
+
+No requested operation has run while pending. A pending read contains no `value`.
+After approval, repeat the same tool call. It reuses access and returns the operation result.
+Denied, cancelled, expired, and invalid operations still return errors.
+CLI commands retain nonzero exit codes while pending, so pipelines cannot consume an approval response as a secret.
 Use `keywarden_request_access` for a planned session or a broad scope across several operations.
 Session requests default to `operations: ["read", "list"]`, matching `keywarden request-session`.
 Explicit operations replace this default. Use `["read"]` for a read-only request or `["list"]` for metadata listing only.
@@ -146,7 +163,15 @@ keywarden list --vault agents --query deployment --limit 20 --cursor CURSOR
 
 ## Approval delivery and controls
 
-`keywarden_access_status` returns `delivery` for each phone request. Pending errors include the same delivery details.
+Call `keywarden_access_status` without arguments before any access request.
+It returns `status: "ready"`, `accounts`, `mcpOperations`, and `providerVerified: false`.
+Each account includes its direct scope, active lease scopes, and pending requests.
+`active` can cover only part of an account. Check each lease's vault, item, and operation scope.
+The overview reads local broker policy. It does not verify provider credentials, execute vault commands, or renew idle limits.
+Expired and revoked leases do not appear as active access.
+
+Supply `requestId` to poll one request. Omitting it always returns the account overview, even after a prior request.
+Request status and pending operation results include `delivery`.
 
 | Field | Meaning |
 | --- | --- |
@@ -203,14 +228,15 @@ The MCP process has no 1Password token and no direct network connection to 1Pass
 | Tool | Function |
 | --- | --- |
 | `keywarden_request_access` | Request iPhone approval for a scoped lease. |
-| `keywarden_access_status` | Poll the last request or a supplied request ID. |
+| `keywarden_access_status` | Show current account access, or poll a supplied request ID. |
 | `keywarden_read_secret` | Read one approved `op://` field, or request exact access. |
 | `keywarden_list_items` | List metadata in one approved vault, or request exact access. |
 | `keywarden_list_fields` | List safe field metadata, or request exact item access. |
 | `keywarden_list_vaults` | Discover approved vault IDs and names, with search and pages. |
 | `keywarden_manage_request` | Retry a notification or cancel a pending request. |
 
-The broker supports read, list, write, create, and delete lease scopes. The MCP adapter exposes read and list operations first.
+The broker supports read, list, write, create, and delete lease scopes. MCP tools execute read and list only.
+Write, create, and delete scopes apply to CLI operations. They do not add MCP mutation tools.
 
 The direct agent scope covers only the `agents` vault. It uses the existing local `agent` opgate profile.
 

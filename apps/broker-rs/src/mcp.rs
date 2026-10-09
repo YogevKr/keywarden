@@ -186,8 +186,7 @@ impl Server {
                     }
                     Err(error) => {
                         let details = error_with_delivery(&error).await;
-                        let text = details.to_string();
-                        json!({"content":[{"type":"text","text":text}],"structuredContent":details,"isError":true})
+                        tool_failure(details)
                     }
                 }
             }
@@ -277,6 +276,9 @@ impl Server {
                 if let Some(session_name) = &args.session_name {
                     client.session_name = Some(session_name.clone());
                 }
+                if let Some(session_id) = &args.session_id {
+                    client.session_id = Some(session_id.clone());
+                }
                 let status = cli::local("GET", "/v1/status", None).await?;
                 let phone = status["phoneId"]
                     .as_str()
@@ -300,10 +302,9 @@ impl Server {
             "keywarden_access_status" => {
                 let args: StatusArgs = parse(args)?;
                 check_wait(args.wait_seconds)?;
-                let id = args
-                    .request_id
-                    .or_else(|| self.last_request.clone())
-                    .ok_or_else(|| msg("Request access first or supply requestId"))?;
+                let Some(id) = args.request_id else {
+                    return cli::local("GET", "/v1/access", None).await;
+                };
                 check_text(&id)?;
                 if id == "direct-agent" {
                     return Ok(direct_agent_status());
@@ -451,7 +452,14 @@ impl Server {
         }
         self.last_request = Some("direct-agent".into());
         let mut status = direct_agent_status_with_operations(&args.operations);
-        status["client"] = serde_json::to_value(self.client.clone())?;
+        let mut client = self.client.clone();
+        if let Some(name) = &args.session_name {
+            client.session_name = Some(name.clone());
+        }
+        if let Some(id) = &args.session_id {
+            client.session_id = Some(id.clone());
+        }
+        status["client"] = serde_json::to_value(client)?;
         status["intent"] = json!({"task":args.task,"reason":args.reason});
         Ok(status)
     }
@@ -750,6 +758,7 @@ struct AccessArgs {
     #[serde(default)]
     task: Option<String>,
     session_name: Option<String>,
+    session_id: Option<String>,
     agent: Option<String>,
     host: Option<String>,
     #[serde(default)]
@@ -775,6 +784,9 @@ impl AccessArgs {
         }
         if let Some(session_name) = &self.session_name {
             check_text(session_name)?;
+        }
+        if let Some(session_id) = &self.session_id {
+            check_text(session_id)?;
         }
         if let Some(agent) = &self.agent {
             check_text(agent)?;
@@ -1056,6 +1068,18 @@ fn tool_text(name: &str, data: &Value) -> String {
     }
 }
 
+fn tool_failure(details: Value) -> Value {
+    let pending = details["error"]["code"] == "approval_required";
+    let data = if pending {
+        json!({"status":"pending","requestId":details["error"]["requestId"],
+            "delivery":details["error"]["delivery"],"retryAfterSeconds":2,
+            "next":"Approve on your phone, then repeat the same tool call. Use keywarden_access_status with requestId to check approval."})
+    } else {
+        details
+    };
+    json!({"content":[{"type":"text","text":data.to_string()}],"structuredContent":data,"isError":!pending})
+}
+
 pub(crate) fn error_details(error: &crate::BrokerError) -> Value {
     let message = error.to_string();
     let request_id = message
@@ -1238,6 +1262,32 @@ fn catalog() -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pending_is_a_normal_result_but_denial_is_an_error() {
+        let result = tool_failure(
+            json!({"error":{"code":"approval_required","requestId":"request-test","delivery":{"phoneReceipt":"unconfirmed"}}}),
+        );
+        assert_eq!(result["isError"], false);
+        assert_eq!(result["structuredContent"]["status"], "pending");
+        assert_eq!(result["structuredContent"]["requestId"], "request-test");
+        assert!(result["structuredContent"].get("error").is_none());
+        assert_eq!(
+            serde_json::from_str::<Value>(result["content"][0]["text"].as_str().unwrap()).unwrap(),
+            result["structuredContent"]
+        );
+        for code in [
+            "approval_denied",
+            "lease_expired",
+            "scope_denied",
+            "op_rejected",
+        ] {
+            assert_eq!(
+                tool_failure(json!({"error":{"code":code}}))["isError"],
+                true
+            );
+        }
+    }
 
     async fn ready() -> Server {
         let mut server = Server::default();

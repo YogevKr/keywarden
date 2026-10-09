@@ -494,6 +494,46 @@ impl SessionStore {
         }
     }
 
+    fn access_overview(&mut self) -> Value {
+        let requests: Vec<_> = self.requests.values().cloned().collect();
+        let mut accounts = Vec::new();
+        for account in ["agent", "personal", "work"] {
+            let mut leases = Vec::new();
+            let mut pending = Vec::new();
+            for request in &requests {
+                if !request
+                    .request
+                    .scope
+                    .accounts
+                    .iter()
+                    .any(|name| name == account)
+                {
+                    continue;
+                }
+                let status = self.status(request);
+                if status["status"] == "active" {
+                    leases.push(serde_json::json!({"requestId":request.request.id,"leaseId":request.lease_id,"scope":request.request.scope,"expiresAt":status["expiresAt"],"idleUntil":status["idleUntil"]}));
+                } else if status["status"] == "pending"
+                    && timestamp(&request.request.expires_at).is_ok_and(|at| at > Utc::now())
+                {
+                    pending.push(serde_json::json!({"requestId":request.request.id,"scope":request.request.scope,"expiresAt":request.request.expires_at}));
+                }
+            }
+            leases.sort_by_key(|entry| entry["leaseId"].as_str().unwrap_or("").to_owned());
+            pending.sort_by_key(|entry| entry["requestId"].as_str().unwrap_or("").to_owned());
+            let direct = account == "agent";
+            let status = if direct || !leases.is_empty() {
+                "active"
+            } else if !pending.is_empty() {
+                "pending"
+            } else {
+                "approval_required"
+            };
+            accounts.push(serde_json::json!({"account":account,"status":status,"approvalRequired":!direct,"directScope":if direct { serde_json::json!({"accounts":["agent"],"vaults":["agents"],"items":"all","operations":["read","list","write","create","delete"]}) } else { Value::Null },"leases":leases,"pendingRequests":pending}));
+        }
+        serde_json::json!({"status":"ready","accounts":accounts,"mcpOperations":["read","list"],"providerVerified":false})
+    }
+
     fn authorize(&mut self, operation: &OperationRequest) -> Result<()> {
         let resolved = self.resolve_operation(operation)?;
         if resolved.lease_id == "direct-agent" {
@@ -1621,6 +1661,9 @@ async fn route_inner(broker: &Arc<Broker>, request: HttpRequest) -> Result<Value
             serde_json::json!({"brokerId": broker.identity.broker_id, "signingPublicJwk": broker.identity.signing_public, "encryptionPublicJwk": broker.identity.encryption_public}),
         );
     }
+    if request.method == "GET" && path == "/v1/access" {
+        return Ok(broker.store.lock().await.access_overview());
+    }
     if request.method == "POST" && path == "/v1/operations/resolve" {
         let operation: OperationRequest = json_body(&request.body)?;
         broker
@@ -2178,8 +2221,9 @@ fn opgate_profile_for_account(account: &str) -> String {
         "agent" => env::var("KEYWARDEN_OPGATE_PROFILE").unwrap_or_else(|_| "agent".into()),
         "personal" => env::var("KEYWARDEN_OPGATE_PERSONAL_PROFILE")
             .unwrap_or_else(|_| "keywarden-personal".into()),
-        "work" => env::var("KEYWARDEN_OPGATE_WORK_PROFILE")
-            .unwrap_or_else(|_| "keywarden-work".into()),
+        "work" => {
+            env::var("KEYWARDEN_OPGATE_WORK_PROFILE").unwrap_or_else(|_| "keywarden-work".into())
+        }
         _ => account.into(),
     }
 }
@@ -2324,6 +2368,70 @@ mod tests {
         let approved = store.requests.get(&pending.request.id).cloned().unwrap();
         let status = store.status(&approved);
         assert_eq!(status["requestHash"], legacy_hash);
+    }
+
+    #[test]
+    fn overview_checks_scope_expiry_and_revocation_without_renewal() {
+        let mut store = SessionStore::new();
+        let (pending, created) = store
+            .create(SessionInput {
+                agent: "Codex".into(),
+                host: "Mac".into(),
+                phone_id: "phone-1".into(),
+                reason: "Read metadata".into(),
+                intent: ApprovalIntent {
+                    task: Some("Inspect items".into()),
+                    reason: "Read metadata".into(),
+                },
+                client: ClientMetadata::manual("Codex", "Mac"),
+                scope: SessionScope {
+                    accounts: vec!["personal".into()],
+                    vaults: vec!["Vault".into()],
+                    items: ItemsScope::All("all".into()),
+                    operations: vec!["list".into()],
+                },
+                duration_seconds: 300,
+                idle_timeout_seconds: 60,
+            })
+            .unwrap();
+        assert!(created);
+        let before = store.access_overview();
+        assert_eq!(before["accounts"][0]["status"], "active");
+        assert_eq!(before["accounts"][1]["status"], "pending");
+        assert_eq!(before["accounts"][2]["status"], "approval_required");
+        let lease = store
+            .approve(
+                &pending.request.id,
+                &ApprovalDecision {
+                    version: 1,
+                    decision_type: "approval_decision".into(),
+                    request_id: pending.request.id.clone(),
+                    request_hash: pending.request_hash.clone(),
+                    decision: "approve".into(),
+                    decided_at: now(),
+                    nonce: "overview".into(),
+                },
+            )
+            .unwrap();
+        let active = store.access_overview();
+        assert_eq!(active["accounts"][1]["status"], "active");
+        assert_eq!(
+            active["accounts"][1]["leases"][0]["scope"]["operations"],
+            serde_json::json!(["list"])
+        );
+        assert_eq!(store.leases[&lease.id].idle_until, lease.idle_until);
+        store.revoke(&lease.id);
+        assert_eq!(
+            store.access_overview()["accounts"][1]["leases"],
+            serde_json::json!([])
+        );
+        store.leases.get_mut(&lease.id).unwrap().status = "active".into();
+        store.leases.get_mut(&lease.id).unwrap().idle_until = "2000-01-01T00:00:00Z".into();
+        assert_eq!(
+            store.access_overview()["accounts"][1]["status"],
+            "approval_required"
+        );
+        assert_eq!(store.leases[&lease.id].status, "expired");
     }
 
     #[test]

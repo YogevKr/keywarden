@@ -143,7 +143,7 @@ pub(crate) fn mcp_metadata(params: &Value, protocol_version: &str) -> Result<Cli
     check_metadata_text(product_version)?;
     let (product, display_name) = normalize_client(client_name);
     let session_name = session_environment(product, "NAME")
-        .or_else(|| client_info["title"].as_str().map(str::to_owned));
+        .or_else(|| session_title(client_info["title"].as_str(), client_name, display_name));
     let session_id = session_environment(product, "ID");
     if let Some(value) = &session_name {
         check_metadata_text(value)?;
@@ -184,6 +184,16 @@ pub(crate) fn normalize_client(name: &str) -> (&'static str, &'static str) {
     } else {
         ("mcp", "MCP client")
     }
+}
+
+fn session_title(title: Option<&str>, client_name: &str, display_name: &str) -> Option<String> {
+    title
+        .filter(|title| {
+            !title.trim().is_empty()
+                && !title.eq_ignore_ascii_case(client_name)
+                && !title.eq_ignore_ascii_case(display_name)
+        })
+        .map(str::to_owned)
 }
 
 fn session_environment(product: &str, kind: &str) -> Option<String> {
@@ -227,6 +237,19 @@ fn check_metadata_text(value: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn product_title_is_not_a_task_session_name() {
+        assert_eq!(session_title(Some("Codex"), "codex", "Codex"), None);
+        assert_eq!(
+            session_title(Some("Claude Code"), "claude-code", "Claude Code"),
+            None
+        );
+        assert_eq!(
+            session_title(Some("Deploy API"), "codex", "Codex"),
+            Some("Deploy API".into())
+        );
+    }
 
     fn environment(key: &str) -> Option<String> {
         match key {

@@ -127,7 +127,9 @@ It shows `Keywarden CLI` when detection is unavailable. Use `--agent` to set an 
 CLI and MCP session requests allow read and list by default. Explicit operations replace these defaults.
 Use `keywarden request-session --help` to see scope, duration, and identity options.
 
-Use `keywarden_access_status` when a personal or work request remains pending.
+Use `keywarden_access_status` without arguments for current account access. Supply `requestId` to poll a pending approval.
+Pending MCP operations return `isError: false`, `status: "pending"`, and a request ID. Repeat the same call after approval.
+MCP executes read and list only. Write, create, and delete lease scopes apply to CLI operations.
 
 Use `keywarden_read_secret` with an `op://vault/item/field` reference. The adapter selects the only matching approved lease.
 

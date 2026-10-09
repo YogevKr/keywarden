@@ -1,7 +1,7 @@
 [
   {
     "name": "keywarden_request_access",
-    "description": "Manage 1Password access through Keywarden. Keywarden identifies Codex, Claude Code, or another MCP client from the MCP handshake. Request iPhone approval for personal or work vaults. The existing agent scope uses the agents vault without approval. Supply a task and reason as approval intent. Supply vaults or allVaults. Sessions allow read and list by default. Supply operations to request a narrower scope. Do not put secret values in the intent.",
+    "description": "Manage 1Password access through Keywarden. Keywarden identifies Codex, Claude Code, or another MCP client from the MCP handshake. Request iPhone approval for personal or work vaults. The existing agent scope uses the agents vault without approval. Supply a task and reason as approval intent. Supply vaults or allVaults. Sessions allow read and list by default. Supply operations to request a narrower scope. Do not put secret values in the intent. MCP tools execute read and list only. Write, create, and delete scopes are for the CLI; no MCP item mutation tools exist.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -49,7 +49,8 @@
           "default": [
             "read",
             "list"
-          ]
+          ],
+          "description": "MCP executes read and list. Write, create, and delete apply only to CLI operations."
         },
         "durationSeconds": {
           "type": "integer",
@@ -94,6 +95,12 @@
           "maximum": 25,
           "default": 0,
           "description": "Wait 0-25 seconds per call. Repeat the same call or access_status for a longer wait."
+        },
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Optional task session ID when the host does not supply it. Display metadata only; never invent an ID."
         }
       },
       "required": [
@@ -173,7 +180,7 @@
   },
   {
     "name": "keywarden_access_status",
-    "description": "Check Keywarden 1Password access status. Defaults to the last request in this MCP connection. Returns client metadata and approval intent with the scope. Retains approved lease IDs for later reads. Use waitSeconds to poll without creating another request. Delivery states distinguish relay acceptance, Apple acceptance, and approval polling. Use keywarden_manage_request to retry a notification or cancel a pending request.",
+    "description": "Return current account access without creating a request or calling 1Password. With no requestId, return agent scope, active leases, and pending requests for each account. providerVerified=false means this reports broker policy, not provider connectivity. Supply requestId to poll one approval with waitSeconds (0-25). Status does not renew leases.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -193,65 +200,100 @@
     },
     "outputSchema": {
       "type": "object",
-      "properties": {
-        "requestId": {
-          "type": "string"
-        },
-        "status": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "object"
-        },
-        "leaseId": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "expiresAt": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "idleUntil": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "client": {
-          "type": [
-            "object",
-            "null"
-          ]
-        },
-        "intent": {
-          "type": [
-            "object",
-            "null"
-          ]
-        },
-        "delivery": {
-          "type": [
-            "object",
-            "null"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "object"
+            },
+            "leaseId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "expiresAt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "idleUntil": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "client": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "intent": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "delivery": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "Relay, Apple acceptance, and polling status. Apple acceptance is not proof of phone delivery."
+            }
+          },
+          "required": [
+            "requestId",
+            "status",
+            "scope",
+            "leaseId",
+            "expiresAt",
+            "idleUntil",
+            "client",
+            "intent"
           ],
-          "description": "Relay, Apple acceptance, and polling status. Apple acceptance is not proof of phone delivery."
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "const": "ready"
+            },
+            "accounts": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "mcpOperations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "providerVerified": {
+              "const": false
+            }
+          },
+          "required": [
+            "status",
+            "accounts",
+            "mcpOperations",
+            "providerVerified"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "requestId",
-        "status",
-        "scope",
-        "leaseId",
-        "expiresAt",
-        "idleUntil",
-        "client",
-        "intent"
-      ],
-      "additionalProperties": false
+      ]
     },
     "annotations": {
       "readOnlyHint": true,
@@ -260,7 +302,7 @@
   },
   {
     "name": "keywarden_read_secret",
-    "description": "Read a 1Password field through the local broker. The agent scope needs no approval. Personal and work calls request exact access when no lease matches. Pass structuredContent.value directly to the consumer.",
+    "description": "Read a 1Password field through the local broker. The agent scope needs no approval. Personal and work calls request exact access when no lease matches. Pass structuredContent.value directly to the consumer. Pending approval returns isError=false with status=pending and requestId. Repeat the same call after approval; no operation has run while pending.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -312,19 +354,56 @@
     },
     "outputSchema": {
       "type": "object",
-      "properties": {
-        "reference": {
-          "type": "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "reference": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "reference",
+            "value"
+          ],
+          "additionalProperties": false
         },
-        "value": {
-          "type": "string"
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "const": "pending"
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "delivery": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "retryAfterSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "next": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "requestId",
+            "delivery",
+            "retryAfterSeconds",
+            "next"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "reference",
-        "value"
-      ],
-      "additionalProperties": false
+      ]
     },
     "annotations": {
       "readOnlyHint": true,
@@ -333,7 +412,7 @@
   },
   {
     "name": "keywarden_list_items",
-    "description": "List or search item metadata in an approved vault. Returns only IDs, titles, and categories. Supports vault names or IDs and cursor pagination. Agent access needs no approval. Personal and work calls request list access when needed. waitSeconds accepts 0-25.",
+    "description": "List or search item metadata in an approved vault. Returns only IDs, titles, and categories. Supports vault names or IDs and cursor pagination. Agent access needs no approval. Personal and work calls request list access when needed. waitSeconds accepts 0-25. Pending approval returns isError=false with status=pending and requestId. Repeat the same call after approval; no operation has run while pending.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -401,45 +480,82 @@
     },
     "outputSchema": {
       "type": "object",
-      "properties": {
-        "vault": {
-          "type": "string"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "category": {
-                "type": "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "vault": {
+              "type": "string"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
               }
             },
-            "additionalProperties": false
-          }
+            "totalCount": {
+              "type": "integer"
+            },
+            "nextCursor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "vault",
+            "items",
+            "totalCount",
+            "nextCursor"
+          ],
+          "additionalProperties": false
         },
-        "totalCount": {
-          "type": "integer"
-        },
-        "nextCursor": {
-          "type": [
-            "string",
-            "null"
-          ]
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "const": "pending"
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "delivery": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "retryAfterSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "next": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "requestId",
+            "delivery",
+            "retryAfterSeconds",
+            "next"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "vault",
-        "items",
-        "totalCount",
-        "nextCursor"
-      ],
-      "additionalProperties": false
+      ]
     },
     "annotations": {
       "readOnlyHint": true,
@@ -448,7 +564,7 @@
   },
   {
     "name": "keywarden_list_fields",
-    "description": "List safe field metadata for one 1Password item. It returns field references for keywarden_read_secret and never returns field values. Personal and work calls request exact read access when no lease matches.",
+    "description": "List safe field metadata for one 1Password item. It returns field references for keywarden_read_secret and never returns field values. Personal and work calls request exact read access when no lease matches. Pending approval returns isError=false with status=pending and requestId. Repeat the same call after approval; no operation has run while pending.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -505,26 +621,63 @@
     },
     "outputSchema": {
       "type": "object",
-      "properties": {
-        "vault": {
-          "type": "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "vault": {
+              "type": "string"
+            },
+            "item": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "required": [
+            "vault",
+            "item",
+            "fields"
+          ],
+          "additionalProperties": false
         },
-        "item": {
-          "type": "string"
-        },
-        "fields": {
-          "type": "array",
-          "items": {
-            "type": "object"
-          }
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "const": "pending"
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "delivery": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "retryAfterSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "next": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "requestId",
+            "delivery",
+            "retryAfterSeconds",
+            "next"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "vault",
-        "item",
-        "fields"
-      ],
-      "additionalProperties": false
+      ]
     },
     "annotations": {
       "readOnlyHint": true,
@@ -533,7 +686,7 @@
   },
   {
     "name": "keywarden_list_vaults",
-    "description": "Discover vault IDs and names without knowing a vault. Returns only vaults within current list approval. Defaults to the approval-free agents vault. Without existing personal or work list access, requests all allowed vault metadata with list permission only. Supports search and pagination. waitSeconds accepts 0-25.",
+    "description": "Discover vault IDs and names without knowing a vault. Returns only vaults within current list approval. Defaults to the approval-free agents vault. Without existing personal or work list access, requests all allowed vault metadata with list permission only. Supports search and pagination. waitSeconds accepts 0-25. Pending approval returns isError=false with status=pending and requestId. Repeat the same call after approval; no operation has run while pending.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -593,46 +746,83 @@
     },
     "outputSchema": {
       "type": "object",
-      "properties": {
-        "account": {
-          "type": "string"
-        },
-        "vaults": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "account": {
+              "type": "string"
+            },
+            "vaults": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
               }
             },
-            "required": [
-              "id",
-              "name"
-            ],
-            "additionalProperties": false
-          }
+            "totalCount": {
+              "type": "integer"
+            },
+            "nextCursor": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "account",
+            "vaults",
+            "totalCount",
+            "nextCursor"
+          ],
+          "additionalProperties": false
         },
-        "totalCount": {
-          "type": "integer"
-        },
-        "nextCursor": {
-          "type": [
-            "string",
-            "null"
-          ]
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "const": "pending"
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "delivery": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "retryAfterSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "next": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "requestId",
+            "delivery",
+            "retryAfterSeconds",
+            "next"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "account",
-        "vaults",
-        "totalCount",
-        "nextCursor"
-      ],
-      "additionalProperties": false
+      ]
     },
     "annotations": {
       "readOnlyHint": true,
