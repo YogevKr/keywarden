@@ -159,6 +159,29 @@ final class NotificationApprovalTests: XCTestCase {
         XCTAssertEqual(received?.nonce, nonce)
     }
 
+    func testRetryCannotConfirmReplayedActiveStatus() async throws {
+        let hash = try phone.hash(request!)
+        let oldDate = Date().addingTimeInterval(-60)
+        let oldDecision = ApprovalDecision(version: 1, type: "approval_decision", requestId: request.id,
+            requestHash: hash, decision: "approve", decidedAt: ISO8601DateFormatter().string(from: oldDate), nonce: "old-decision")
+        try receipts.save(NotificationDecisionReceipt(record: ApprovalRecord(brokerID: context.settings.brokerID,
+            request: request, requestHash: hash, decision: "approve", decidedAt: oldDate),
+            envelope: phone.signDecision(oldDecision, brokerEncryptionKey: broker.encryptionPublicKey()), phoneID: request.phoneId))
+        let original = StubRelayProtocol.handler!
+        StubRelayProtocol.handler = { [self] urlRequest in
+            if urlRequest.httpMethod == "POST" { return try original(urlRequest) }
+            let date = ISO8601DateFormatter()
+            let stale = SessionStatus(version: 1, type: "session_status", requestId: request.id,
+                requestHash: hash, status: "active", issuedAt: date.string(from: oldDate),
+                expiresAt: date.string(from: Date().addingTimeInterval(300)), idleUntil: date.string(from: Date().addingTimeInterval(60)),
+                observedAt: date.string(from: Date().addingTimeInterval(-30)))
+            return (200, try JSONEncoder().encode(["envelope": broker.sign(stale, kind: "session_status", for: phone.encryptionPublicKey())]))
+        }
+        do { _ = try await engine().decide(requestID: request.id, decision: "approve", displayedHash: hash); XCTFail("Replayed active status must fail") }
+        catch NotificationApprovalError.unconfirmed { }
+        XCTAssertNil(try receipts.records(settings: context.settings).first?.session)
+    }
+
     func testMainAppImportsReceiptAndKeepsNewerStatus() async throws {
         let record = try await engine().decide(requestID: request.id, decision: "approve", displayedHash: phone.hash(request!))
         let suite = "keywarden.inline-history.\(UUID().uuidString)"

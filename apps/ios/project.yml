@@ -31,7 +31,7 @@ targets:
       path: Keywarden/Info.plist
       properties:
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "13"
+        CFBundleVersion: "14"
         NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
         UILaunchScreen: {}
         NSFaceIDUsageDescription: "Approve Keywarden agent sessions."
@@ -83,7 +83,7 @@ targets:
         CFBundleDisplayName: Keywarden
         NSFaceIDUsageDescription: "Approve or reject agent access from this notification."
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "13"
+        CFBundleVersion: "14"
         NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.content-extension

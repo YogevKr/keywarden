@@ -158,6 +158,10 @@ final class NotificationApproval {
                 }
                 if ["active", "denied", "cancelled", "revoked", "expired"].contains(status.status) {
                     if status.status == "active" {
+                        if observed < Date().addingTimeInterval(-20) {
+                            try await Task.sleep(for: .milliseconds(500))
+                            continue
+                        }
                         guard decision == "approve", let expires = status.expiresAt.flatMap(parseDate), expires > Date(),
                               let idle = status.idleUntil.flatMap(parseDate), idle > Date() else { throw KeywardenError.invalidEnvelope }
                     }

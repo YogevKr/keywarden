@@ -117,9 +117,9 @@ keywarden status
 
 Apple acceptance does not prove that the phone displayed an alert. Test delivery on the physical iPhone.
 
-### Expanded notifications (build 13)
+### Expanded notifications (build 14)
 
-Open Keywarden once after installing build 13. The app prepares protected data for the notification extension.
+Open Keywarden once after installing build 14. The app prepares protected data for the notification extension.
 Long-press a new notification to see the verified agent, session, account, vaults, items, operations, duration, and reason.
 
 - **Approve** runs fresh Face ID inside the expanded notification. The main app stays closed.
@@ -151,7 +151,7 @@ The table marks completed changes. Other entries remain proposals.
 
 | Priority | Feature | Apple API | Product behavior and limits |
 | --- | --- | --- | --- |
-| Shipped in build 13 | Expanded notification details and decisions | [Notification content extension](https://developer.apple.com/documentation/usernotificationsui/customizing-the-appearance-of-notifications) | Show verified scope. Approve or reject here with fresh Face ID and signed Mac confirmation. |
+| Shipped in build 14 | Expanded notification details and decisions | [Notification content extension](https://developer.apple.com/documentation/usernotificationsui/customizing-the-appearance-of-notifications) | Show verified scope. Approve or reject here with fresh Face ID and signed Mac confirmation. |
 | 1 | Notification preparation | [Notification service extension](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications) | Prepare encrypted request data before display. Keep generic text when keys or network access are unavailable. |
 | Shipped in build 11 | Remove completed alerts | [Delivered notification removal](https://developer.apple.com/documentation/usernotifications/unusernotificationcenter/removedeliverednotifications(withidentifiers:)) | Remove alerts after a decision without clearing unrelated requests. |
 | 2 | Active session countdown | [ActivityKit](https://developer.apple.com/documentation/activitykit) | Show duration and last confirmed state. Revocation opens the app for biometric authentication. |

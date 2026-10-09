@@ -59,7 +59,8 @@ The app retains its original signing key. The extension uses a separate copy pro
 The copy uses `WhenUnlockedThisDeviceOnly` and the dedicated notification access group.
 Every decision starts a fresh biometric-only `LAContext`. The context disables authentication reuse and passcode fallback.
 The extension verifies the request before authentication, then rechecks connection settings, completed IDs, and expiry afterward.
-Only a verified broker status can produce an approval or denial confirmation. Device unlock alone cannot authorize a decision.
+Only a verified broker status can produce an approval or denial confirmation.
+Active confirmation must be no older than 20 seconds, including retries. Device unlock alone cannot authorize a decision.
 The extension saves a receipt before sending. Retries reuse that signed decision and cannot switch its approval result.
 The main app imports receipts into history. An unconfirmed receipt never appears as confirmed access or denial.
 Notification actions stay inside the extension. More details opens the main app.
