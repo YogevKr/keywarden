@@ -117,9 +117,9 @@ keywarden status
 
 Apple acceptance does not prove that the phone displayed an alert. Test delivery on the physical iPhone.
 
-### Expanded notifications (build 14)
+### Expanded notifications (build 15)
 
-Open Keywarden once after installing build 14. The app prepares protected data for the notification extension.
+Open Keywarden once after installing build 15. The app prepares protected data for the notification extension.
 Long-press a new notification to see the verified agent, session, account, vaults, items, operations, duration, and reason.
 
 - **Approve** runs fresh Face ID inside the expanded notification. The main app stays closed.
@@ -128,6 +128,8 @@ Long-press a new notification to see the verified agent, session, account, vault
 
 The extension checks the exact request, connection, and expiry again after Face ID.
 It shows success only after verifying confirmation signed by the Mac.
+Confirmed approval or rejection closes the notification after two seconds and removes that alert.
+An unconfirmed decision stays visible for review or retry.
 Cancelling Face ID sends no decision. Device unlock alone cannot approve access.
 The main app imports notification decisions into history when it next polls.
 A failed connection shows an unconfirmed decision. Repeating the same action reuses the signed decision.

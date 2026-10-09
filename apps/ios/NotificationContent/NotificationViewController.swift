@@ -97,10 +97,17 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
                 self.displayedHash = nil
                 self.extensionContext?.notificationActions = self.extensionContext?.notificationActions.filter { $0.identifier == "KEYWARDEN_REVIEW" } ?? []
                 switch record.session?.status {
-                case "active": self.showMessage("Access approved", "Your Mac confirmed access. Open More details to manage this session.")
+                case "active": self.showMessage("Access approved", "Your Mac confirmed access.")
                 case "denied": self.showMessage("Request rejected", "Your Mac confirmed that access was denied.")
-                default: self.showMessage("Access unavailable", "This request expired, was cancelled, or was revoked. Open Keywarden for its status.")
+                default:
+                    self.showMessage("Access unavailable", "This request expired, was cancelled, or was revoked. Open Keywarden for its status.")
+                    return
                 }
+                // Keep confirmation visible briefly, then close without opening the app.
+                try await Task.sleep(for: .seconds(2))
+                try Task.checkCancellation()
+                self.extensionContext?.dismissNotificationContentExtension()
+                UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [response.notification.request.identifier])
             } catch is CancellationError { return }
               catch let error as LAError where [.userCancel, .systemCancel, .appCancel].contains(error.code) {
                 self.show(request)

@@ -1,7 +1,7 @@
 import XCTest
 
 final class ApprovalUITests: XCTestCase {
-    func testNotificationApproveAndRejectStayInsideNotification() {
+    func testNotificationApproveAndRejectCloseAfterConfirmation() {
         for (action, reason) in [("Approve", "Access approved"), ("Reject", "Request rejected")] {
             let app = XCUIApplication()
             app.launchArguments = ["--ui-fixture", "--notification-preview-fixture"]
@@ -16,9 +16,11 @@ final class ApprovalUITests: XCTestCase {
             notification.press(forDuration: 1.5)
             XCTAssertTrue(springboard.buttons[action].waitForExistence(timeout: 5))
             springboard.buttons[action].tap()
-            XCTAssertTrue(springboard.staticTexts[reason].waitForExistence(timeout: 10))
+            let confirmation = springboard.staticTexts[reason]
+            XCTAssertTrue(confirmation.exists || confirmation.waitForExistence(timeout: 10))
             XCTAssertNotEqual(app.state, .runningForeground)
             capture("Notification \(action) confirmation")
+            assertNotificationClosed(springboard: springboard, confirmation: reason, app: app)
             app.terminate()
         }
     }
@@ -43,6 +45,7 @@ final class ApprovalUITests: XCTestCase {
         XCTAssertTrue(springboard.staticTexts["Access approved"].waitForExistence(timeout: 60))
         XCTAssertNotEqual(app.state, .runningForeground)
         capture("Real Face ID inline approval")
+        assertNotificationClosed(springboard: springboard, confirmation: "Access approved", app: app)
     }
 
     func testExpandedNotificationShowsVerifiedScopeAndOpensExactRequest() {
@@ -154,6 +157,15 @@ final class ApprovalUITests: XCTestCase {
         app.navigationBars["Advanced connection"].buttons.element(boundBy: 0).tap()
         app.buttons["advancedConnection"].tap()
         XCTAssertEqual(app.textFields["Broker ID"].value as? String, "broker_fixture")
+    }
+
+    private func assertNotificationClosed(springboard: XCUIApplication, confirmation: String, app: XCUIApplication) {
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+            object: springboard.staticTexts[confirmation])
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 8), .completed)
+        XCTAssertFalse(springboard.buttons["More details"].exists)
+        XCTAssertNotEqual(app.state, .runningForeground)
+        capture("Notification closed")
     }
 
     private func capture(_ name: String) {
