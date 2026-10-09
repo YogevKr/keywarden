@@ -1,0 +1,34 @@
+{
+  "name": "keywarden",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Remote approval and scoped session leases for agent access through opgate",
+  "type": "module",
+  "workspaces": [
+    "protocol",
+    "apps/broker",
+    "apps/relay-worker"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types --test protocol/test/*.test.ts apps/broker/test/*.test.ts apps/relay-worker/test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test",
+    "rust:test": "cargo test --manifest-path apps/broker-rs/Cargo.toml",
+    "rust:build": "cargo build --manifest-path apps/broker-rs/Cargo.toml",
+    "ios:build": "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project apps/ios/Keywarden.xcodeproj -scheme Keywarden -sdk iphonesimulator -configuration Debug -derivedDataPath /tmp/keywarden-derived CODE_SIGNING_ALLOWED=NO build",
+    "worker:dry-run": "wrangler deploy --dry-run --config apps/relay-worker/wrangler.toml",
+    "check:all": "npm run check && npm run rust:test && npm run rust:build && npm run test:mcp",
+    "test:mcp": "KEYWARDEN_E2E_BROKER_EXEC=apps/broker-rs/target/debug/keywarden-broker node --experimental-strip-types --test apps/broker/test/e2e-local.test.ts",
+    "e2e:worker": "node --experimental-strip-types scripts/e2e-worker.ts",
+    "e2e:worker:rust": "KEYWARDEN_E2E_BROKER_EXEC=apps/broker-rs/target/debug/keywarden-broker npm run e2e:worker",
+    "pilot:real": "scripts/run-real-pilot.sh",
+    "broker": "node --experimental-strip-types apps/broker/src/index.ts",
+    "relay:dev": "wrangler dev --config apps/relay-worker/wrangler.toml",
+    "relay:deploy": "wrangler deploy --config apps/relay-worker/wrangler.toml",
+    "test:sandbox": "python3 scripts/test-sandbox.py"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,457 @@
+[
+  {
+    "name": "single item read",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "agents",
+        "--format=json"
+      ]
+    }
+  },
+  {
+    "name": "single field read",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "read",
+        "op://agents/item-1/password"
+      ],
+      "field": "password"
+    }
+  },
+  {
+    "name": "vault substitution",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "private"
+      ]
+    }
+  },
+  {
+    "name": "item substitution",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-2",
+        "--vault",
+        "agents"
+      ]
+    }
+  },
+  {
+    "name": "reference vault substitution",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "read",
+        "op://private/item-1/password"
+      ]
+    }
+  },
+  {
+    "name": "reference item substitution",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "read",
+        "op://agents/item-2/password"
+      ]
+    }
+  },
+  {
+    "name": "account override",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "agents",
+        "--account",
+        "other"
+      ]
+    }
+  },
+  {
+    "name": "duplicate vault",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "agents",
+        "--vault=private"
+      ]
+    }
+  },
+  {
+    "name": "second item",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "item-2",
+        "--vault",
+        "agents"
+      ]
+    }
+  },
+  {
+    "name": "missing vault",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1"
+      ]
+    }
+  },
+  {
+    "name": "file output",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "read",
+        "op://agents/item-1/password",
+        "--out-file",
+        "/tmp/value"
+      ]
+    }
+  },
+  {
+    "name": "percent encoded reference",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "read",
+        "op://agents/item%2Fother/password"
+      ]
+    }
+  },
+  {
+    "name": "query in reference",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "read",
+        "op://agents/item-1/password?attribute=id"
+      ]
+    }
+  },
+  {
+    "name": "command substitution",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "delete",
+        "item-1",
+        "--vault",
+        "agents"
+      ]
+    }
+  },
+  {
+    "name": "global vault listing",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "list",
+      "vault": "agents",
+      "itemId": null,
+      "args": [
+        "vault",
+        "list"
+      ]
+    }
+  },
+  {
+    "name": "scoped listing",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "list",
+      "vault": "agents",
+      "itemId": null,
+      "args": [
+        "item",
+        "list",
+        "--vault=agents",
+        "--format=json"
+      ]
+    }
+  },
+  {
+    "name": "edit field",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "write",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "edit",
+        "item-1",
+        "--vault",
+        "agents",
+        "name=value"
+      ]
+    }
+  },
+  {
+    "name": "edit extra target",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "write",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "edit",
+        "item-1",
+        "item-2",
+        "--vault",
+        "agents"
+      ]
+    }
+  },
+  {
+    "name": "create item",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "create",
+      "vault": "agents",
+      "itemId": null,
+      "args": [
+        "item",
+        "create",
+        "--vault",
+        "agents",
+        "--category",
+        "login",
+        "--title",
+        "Example",
+        "username=test"
+      ]
+    }
+  },
+  {
+    "name": "create template file",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "create",
+      "vault": "agents",
+      "itemId": null,
+      "args": [
+        "item",
+        "create",
+        "--vault",
+        "agents",
+        "--template",
+        "/tmp/private"
+      ]
+    }
+  },
+  {
+    "name": "delete item",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "delete",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "delete",
+        "item-1",
+        "--vault",
+        "agents",
+        "--archive"
+      ]
+    }
+  },
+  {
+    "name": "unsupported flag",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "agents",
+        "--include-archive"
+      ]
+    }
+  },
+  {
+    "name": "field mismatch",
+    "valid": false,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "agents",
+        "--fields",
+        "password"
+      ],
+      "field": "username"
+    }
+  },
+  {
+    "name": "field match",
+    "valid": true,
+    "operation": {
+      "version": 1,
+      "leaseId": "test",
+      "profile": "agent",
+      "operation": "read",
+      "vault": "agents",
+      "itemId": "item-1",
+      "args": [
+        "item",
+        "get",
+        "item-1",
+        "--vault",
+        "agents",
+        "--fields",
+        "username"
+      ],
+      "field": "username"
+    }
+  }
+]

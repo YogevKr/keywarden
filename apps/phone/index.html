@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keywarden approval</title>
+  <style>
+    :root { color-scheme: dark; font: 16px system-ui, sans-serif; }
+    body { max-width: 760px; margin: 0 auto; padding: 20px; background: #10131a; color: #f5f7fb; }
+    input, textarea, button { box-sizing: border-box; width: 100%; margin: 6px 0 12px; padding: 10px; border-radius: 8px; border: 1px solid #3c4659; background: #171d28; color: inherit; }
+    button { cursor: pointer; background: #285ec7; border: 0; font-weight: 700; }
+    button.deny { background: #943c48; }
+    label { display: block; color: #aeb9cb; font-size: 13px; }
+    fieldset { border: 1px solid #3c4659; border-radius: 10px; margin: 14px 0; }
+    legend { color: #aeb9cb; }
+    .request { padding: 14px; border: 1px solid #d2a84b; border-radius: 10px; margin: 12px 0; background: #211d12; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    .muted { color: #aeb9cb; }
+  </style>
+</head>
+<body>
+  <h1>Keywarden approval</h1>
+  <p class="muted">This page decrypts requests on the phone. The relay sees ciphertext only.</p>
+
+  <fieldset>
+    <legend>Pairing</legend>
+    <label>Relay URL<input id="relay" placeholder="https://relay.example.workers.dev"></label>
+    <label>Relay token<input id="token" type="password"></label>
+    <label>Broker ID<input id="brokerId"></label>
+    <label>Phone ID<input id="phoneId" value="phone-1"></label>
+    <label>Broker signing public JWK<textarea id="brokerSigning" rows="3"></textarea></label>
+    <label>Broker encryption public JWK<textarea id="brokerEncryption" rows="3"></textarea></label>
+    <button id="generate">Generate phone keys</button>
+    <button id="save">Save settings</button>
+    <button id="pairing">Copy pairing JSON</button>
+    <p id="keyStatus" class="muted"></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Pending requests</legend>
+    <button id="poll">Poll now</button>
+    <button id="watch">Start polling</button>
+    <div id="requests"><p class="muted">No pending requests.</p></div>
+  </fieldset>
+
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+    const state = { signingPrivate: null, signingPublic: null, encryptionPrivate: null, encryptionPublic: null, timer: null };
+
+    function b64(bytes) { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, ""); }
+    function bytes(value) { const p = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "="); const s = atob(p); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+    function canonical(value) {
+      if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
+      if (typeof value === "number") return JSON.stringify(value);
+      if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+      return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(",")}}`;
+    }
+    function saveState() {
+      localStorage.setItem("keywarden.settings", JSON.stringify({ relay: $("relay").value, token: $("token").value, brokerId: $("brokerId").value, phoneId: $("phoneId").value, brokerSigning: $("brokerSigning").value, brokerEncryption: $("brokerEncryption").value }));
+      if (state.signingPrivate) localStorage.setItem("keywarden.keys", JSON.stringify(state));
+    }
+    function loadState() {
+      const settings = JSON.parse(localStorage.getItem("keywarden.settings") || "null");
+      if (settings) for (const [key, value] of Object.entries(settings)) if ($(key)) $(key).value = value;
+      const keys = JSON.parse(localStorage.getItem("keywarden.keys") || "null");
+      if (keys) Object.assign(state, keys);
+      $("keyStatus").textContent = state.signingPrivate ? "Phone keys are loaded." : "Generate phone keys before pairing.";
+    }
+    async function generate() {
+      const signing = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+      const encryption = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey"]);
+      state.signingPrivate = await crypto.subtle.exportKey("jwk", signing.privateKey);
+      state.signingPublic = await crypto.subtle.exportKey("jwk", signing.publicKey);
+      state.encryptionPrivate = await crypto.subtle.exportKey("jwk", encryption.privateKey);
+      state.encryptionPublic = await crypto.subtle.exportKey("jwk", encryption.publicKey);
+      saveState();
+      $("keyStatus").textContent = "Phone keys generated. Copy pairing JSON into the broker.";
+    }
+    async function importKey(jwk, algorithm, usages) { return crypto.subtle.importKey("jwk", jwk, algorithm, true, usages); }
+    async function decrypt(payload) {
+      const privateKey = await importKey(state.encryptionPrivate, { name: "ECDH", namedCurve: "P-256" }, ["deriveKey"]);
+      const ephemeral = await importKey(payload.ephemeralPublicKey, { name: "ECDH", namedCurve: "P-256" }, []);
+      const key = await crypto.subtle.deriveKey({ name: "ECDH", public: ephemeral }, privateKey, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      const clear = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bytes(payload.iv) }, key, bytes(payload.ciphertext));
+      return new TextDecoder().decode(clear);
+    }
+    async function verifyEnvelope(envelope) {
+      const key = await importKey(JSON.parse($("brokerSigning").value), { name: "ECDSA", namedCurve: "P-256" }, ["verify"]);
+      const { signature, ...unsigned } = envelope;
+      return crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, bytes(signature), new TextEncoder().encode(canonical(unsigned)));
+    }
+    async function encrypt(plaintext) {
+      const recipient = await importKey(JSON.parse($("brokerEncryption").value), { name: "ECDH", namedCurve: "P-256" }, []);
+      const ephemeral = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey"]);
+      const key = await crypto.subtle.deriveKey({ name: "ECDH", public: recipient }, ephemeral.privateKey, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plaintext));
+      return { version: 1, algorithm: "ECDH-P256-AES-256-GCM", ephemeralPublicKey: await crypto.subtle.exportKey("jwk", ephemeral.publicKey), iv: b64(iv), ciphertext: b64(new Uint8Array(ciphertext)) };
+    }
+    async function decisionEnvelope(decision) {
+      const body = await encrypt(JSON.stringify(decision));
+      const senderPublicKey = state.signingPublic;
+      const unsigned = { version: 1, kind: "approval_decision", body, senderPublicKey };
+      const privateKey = await importKey(state.signingPrivate, { name: "ECDSA", namedCurve: "P-256" }, ["sign"]);
+      const signature = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, privateKey, new TextEncoder().encode(canonical(unsigned)));
+      return { ...unsigned, signature: b64(new Uint8Array(signature)) };
+    }
+    async function api(path, init = {}) {
+      const response = await fetch($("relay").value.replace(/\/$/, "") + path, { ...init, headers: { authorization: `Bearer ${$("token").value}`, "content-type": "application/json", ...(init.headers || {}) } });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+      return body;
+    }
+    async function poll() {
+      if (!state.signingPrivate) throw new Error("Generate phone keys first");
+      const broker = encodeURIComponent($("brokerId").value);
+      const phone = encodeURIComponent($("phoneId").value);
+      const result = await api(`/v1/brokers/${broker}/phones/${phone}/requests`);
+      const root = $("requests"); root.replaceChildren();
+      if (!result.requests.length) { root.innerHTML = '<p class="muted">No pending requests.</p>'; return; }
+      for (const entry of result.requests) {
+        const verified = await verifyEnvelope(entry.envelope);
+        if (!verified) { root.innerHTML += '<p>Rejected an invalid broker signature.</p>'; continue; }
+        const request = JSON.parse(await decrypt(entry.envelope.body));
+        const card = document.createElement("article"); card.className = "request";
+        card.innerHTML = `<h2>Open session</h2><pre>${escapeHtml(JSON.stringify(request, null, 2))}</pre>`;
+        const approve = document.createElement("button"); approve.textContent = "Approve";
+        const deny = document.createElement("button"); deny.textContent = "Deny"; deny.className = "deny";
+        approve.onclick = () => decide(entry.requestId, request, "approve", card);
+        deny.onclick = () => decide(entry.requestId, request, "deny", card);
+        card.append(approve, deny); root.append(card);
+      }
+    }
+    async function decide(requestId, request, value, card) {
+      const requestHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical(request)));
+      const decision = { version: 1, type: "approval_decision", requestId, requestHash: b64(new Uint8Array(requestHash)), decision: value, decidedAt: new Date().toISOString(), nonce: crypto.randomUUID() };
+      await api(`/v1/brokers/${encodeURIComponent($("brokerId").value)}/phones/${encodeURIComponent($("phoneId").value)}/requests/${encodeURIComponent(requestId)}/decision`, { method: "POST", body: JSON.stringify(await decisionEnvelope(decision)) });
+      card.remove();
+    }
+    function escapeHtml(value) { return value.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+    $("generate").onclick = () => generate().catch(error => $("keyStatus").textContent = error.message);
+    $("save").onclick = () => { saveState(); $("keyStatus").textContent = "Settings saved."; };
+    $("pairing").onclick = async () => { saveState(); await navigator.clipboard.writeText(JSON.stringify({ phoneId: $("phoneId").value, encryptionPublicJwk: state.encryptionPublic, signingPublicJwk: state.signingPublic }, null, 2)); $("keyStatus").textContent = "Pairing JSON copied."; };
+    $("poll").onclick = () => poll().catch(error => $("requests").innerHTML = `<p>${escapeHtml(error.message)}</p>`);
+    $("watch").onclick = () => { if (state.timer) clearInterval(state.timer); state.timer = setInterval(() => poll().catch(console.error), 2000); poll().catch(console.error); };
+    loadState();
+  </script>
+</body>
+</html>

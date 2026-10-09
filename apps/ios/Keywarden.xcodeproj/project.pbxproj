@@ -1,0 +1,754 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00E2ECBCDF684D500FDB7B4B /* NotificationContent.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DB9D609EC86046F2DBB38479 /* NotificationContent.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		01111A4BD0317290DED81CB1 /* PreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2EE879105DA524DD3AE4032 /* PreviewData.swift */; };
+		03D72CA9D1A4A7C5A58164D3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C31E2F354A141A3897B35F /* ContentView.swift */; };
+		04828F8E540DD6BD2B698F2A /* ApprovalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283596C5C5516E2BD056BF53 /* ApprovalUITests.swift */; };
+		1E578F90510381BBDDDE21CA /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862DAA092A07B63851ADCD54 /* KeychainStore.swift */; };
+		26BBD23F33A862701983EE5E /* Base64URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07215CCA6FAA6AC8BAAEE7A /* Base64URL.swift */; };
+		589C3662F69FF4DE28CDA6E9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7D441FB410B38C3F318721 /* SettingsView.swift */; };
+		5B756F4589D25D3291286D89 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC2F79B6247210926FDA460 /* Notifications.swift */; };
+		6175DBF268DD28F9EEA5146D /* RelayClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1CC56E0DC506381FAE3CD /* RelayClient.swift */; };
+		749F16E8A02E293BFF0B6540 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7925DD2F8E695DAF1D914E5 /* Models.swift */; };
+		7FDBCE67751E0C1B0027DE63 /* NotificationPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCB2CBDBAC9A24411689FFC /* NotificationPreview.swift */; };
+		8261CD63716CC284BF0C648B /* CryptoBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86C01E2321507A1334B7D8 /* CryptoBox.swift */; };
+		96AB8A11EBB3162464247100 /* CryptoBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86C01E2321507A1334B7D8 /* CryptoBox.swift */; };
+		A18D0C0F6EE5E04A4C85CDD2 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 862DAA092A07B63851ADCD54 /* KeychainStore.swift */; };
+		AFE0AB858DC0543A75FCF94F /* Base64URL.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07215CCA6FAA6AC8BAAEE7A /* Base64URL.swift */; };
+		B0BCA7E3DBFDD5FFA8843D2C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7925DD2F8E695DAF1D914E5 /* Models.swift */; };
+		BE103E1BA4C958B8D789EB3A /* ApprovalModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CE447D5F466C1A82A33EEF2 /* ApprovalModelTests.swift */; };
+		BEFADBECC55723AAD35D0BF2 /* KeywardenApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0D88B4CE716163EBD209CD /* KeywardenApp.swift */; };
+		C558674F028721C465F5B973 /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 003B430A449F5A68D1D71348 /* NotificationViewController.swift */; };
+		C68C0CCD6E15552DD1A06B66 /* CryptoBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE78770BD1852FCE4B3DD74D /* CryptoBoxTests.swift */; };
+		CE7ECCA71203AFD4B3280702 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 21571425602FD5257D8084F3 /* Assets.xcassets */; };
+		CEA76C97C523301F659CDAF6 /* NotificationRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03ED2DEDCDA7B00C2D5D20E9 /* NotificationRoute.swift */; };
+		D6A0ED33409EDB0D794BFFB3 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7256CB61C2A0D2F71FABF31 /* QRScannerView.swift */; };
+		DA12688E5292D3E19178BA67 /* NotificationPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCB2CBDBAC9A24411689FFC /* NotificationPreview.swift */; };
+		EBB9403C43A15A9AB3D4FACF /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 69E3FAD3A8F094CAD8EA2435 /* UserNotificationsUI.framework */; };
+		EDA95FB5549381F1FA4636EB /* ApprovalModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94233F3FF8935953A6F57D5 /* ApprovalModel.swift */; };
+		F39F30C139D477BF4EC35A9F /* RelayClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1CC56E0DC506381FAE3CD /* RelayClient.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		202D22849C06DCAE8471C907 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3832481255DCB9E193E4A515 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ECE96CB8B3DD45375EF03B77;
+			remoteInfo = Keywarden;
+		};
+		34ECE183CB317FD46FCAB01D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3832481255DCB9E193E4A515 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ECE96CB8B3DD45375EF03B77;
+			remoteInfo = Keywarden;
+		};
+		BFD958F934922F64D2D468DD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3832481255DCB9E193E4A515 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 11900B72DB0DF230419D1C58;
+			remoteInfo = NotificationContent;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F675122303753795E8D6C751 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				00E2ECBCDF684D500FDB7B4B /* NotificationContent.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		003B430A449F5A68D1D71348 /* NotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationViewController.swift; sourceTree = "<group>"; };
+		03ED2DEDCDA7B00C2D5D20E9 /* NotificationRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationRoute.swift; sourceTree = "<group>"; };
+		057AD200C3EB9FDBBB0CD29F /* Keywarden.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Keywarden.entitlements; sourceTree = "<group>"; };
+		21571425602FD5257D8084F3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		283596C5C5516E2BD056BF53 /* ApprovalUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalUITests.swift; sourceTree = "<group>"; };
+		3C7596C54251CB80CDDFDB45 /* KeywardenUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KeywardenUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3CE447D5F466C1A82A33EEF2 /* ApprovalModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalModelTests.swift; sourceTree = "<group>"; };
+		5B0D88B4CE716163EBD209CD /* KeywardenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywardenApp.swift; sourceTree = "<group>"; };
+		69E3FAD3A8F094CAD8EA2435 /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
+		7BCB2CBDBAC9A24411689FFC /* NotificationPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPreview.swift; sourceTree = "<group>"; };
+		862DAA092A07B63851ADCD54 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		8EAAC61EE0F89AFC226739FC /* NotificationContent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NotificationContent.entitlements; sourceTree = "<group>"; };
+		8F7D441FB410B38C3F318721 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		93E1B2D262209B12B55E67D9 /* KeywardenTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KeywardenTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9D078ED747D0EA4122425FDC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A07215CCA6FAA6AC8BAAEE7A /* Base64URL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64URL.swift; sourceTree = "<group>"; };
+		A7256CB61C2A0D2F71FABF31 /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		A7C31E2F354A141A3897B35F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BBC2F79B6247210926FDA460 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		D2EE879105DA524DD3AE4032 /* PreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewData.swift; sourceTree = "<group>"; };
+		D7925DD2F8E695DAF1D914E5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		D82293BEA6EDDE5DC568B42E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D94233F3FF8935953A6F57D5 /* ApprovalModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalModel.swift; sourceTree = "<group>"; };
+		D946DFD5E3170A51BEC54707 /* Keywarden.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Keywarden.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA86C01E2321507A1334B7D8 /* CryptoBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoBox.swift; sourceTree = "<group>"; };
+		DB9D609EC86046F2DBB38479 /* NotificationContent.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = NotificationContent.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE78770BD1852FCE4B3DD74D /* CryptoBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoBoxTests.swift; sourceTree = "<group>"; };
+		F0A1CC56E0DC506381FAE3CD /* RelayClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayClient.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		43483587C7AE014C733285C2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EBB9403C43A15A9AB3D4FACF /* UserNotificationsUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		57B79B878175E61AAE122CDA /* App */ = {
+			isa = PBXGroup;
+			children = (
+				5B0D88B4CE716163EBD209CD /* KeywardenApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		60F067DC2DCF6727DE243828 /* NotificationContent */ = {
+			isa = PBXGroup;
+			children = (
+				D82293BEA6EDDE5DC568B42E /* Info.plist */,
+				8EAAC61EE0F89AFC226739FC /* NotificationContent.entitlements */,
+				003B430A449F5A68D1D71348 /* NotificationViewController.swift */,
+			);
+			path = NotificationContent;
+			sourceTree = "<group>";
+		};
+		6D2657CA9D6F5DE8646F3364 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D946DFD5E3170A51BEC54707 /* Keywarden.app */,
+				93E1B2D262209B12B55E67D9 /* KeywardenTests.xctest */,
+				3C7596C54251CB80CDDFDB45 /* KeywardenUITests.xctest */,
+				DB9D609EC86046F2DBB38479 /* NotificationContent.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8500FF6D379AB97E764C209A = {
+			isa = PBXGroup;
+			children = (
+				D9D9E34946855071D73592D9 /* Keywarden */,
+				B4DCB3FBD7F2778A2E7B7CCA /* KeywardenTests */,
+				E748DBB20721360BBA5C4407 /* KeywardenUITests */,
+				60F067DC2DCF6727DE243828 /* NotificationContent */,
+				ACDAB813797FFF22FF4D24A3 /* Frameworks */,
+				6D2657CA9D6F5DE8646F3364 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8DF488639E2C840D5490433E /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				D94233F3FF8935953A6F57D5 /* ApprovalModel.swift */,
+				A07215CCA6FAA6AC8BAAEE7A /* Base64URL.swift */,
+				DA86C01E2321507A1334B7D8 /* CryptoBox.swift */,
+				862DAA092A07B63851ADCD54 /* KeychainStore.swift */,
+				D7925DD2F8E695DAF1D914E5 /* Models.swift */,
+				7BCB2CBDBAC9A24411689FFC /* NotificationPreview.swift */,
+				03ED2DEDCDA7B00C2D5D20E9 /* NotificationRoute.swift */,
+				BBC2F79B6247210926FDA460 /* Notifications.swift */,
+				D2EE879105DA524DD3AE4032 /* PreviewData.swift */,
+				F0A1CC56E0DC506381FAE3CD /* RelayClient.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		940D949265E6597BA37FAA41 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A7C31E2F354A141A3897B35F /* ContentView.swift */,
+				A7256CB61C2A0D2F71FABF31 /* QRScannerView.swift */,
+				8F7D441FB410B38C3F318721 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		ACDAB813797FFF22FF4D24A3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				69E3FAD3A8F094CAD8EA2435 /* UserNotificationsUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B4DCB3FBD7F2778A2E7B7CCA /* KeywardenTests */ = {
+			isa = PBXGroup;
+			children = (
+				3CE447D5F466C1A82A33EEF2 /* ApprovalModelTests.swift */,
+				DE78770BD1852FCE4B3DD74D /* CryptoBoxTests.swift */,
+			);
+			path = KeywardenTests;
+			sourceTree = "<group>";
+		};
+		D9D9E34946855071D73592D9 /* Keywarden */ = {
+			isa = PBXGroup;
+			children = (
+				21571425602FD5257D8084F3 /* Assets.xcassets */,
+				9D078ED747D0EA4122425FDC /* Info.plist */,
+				057AD200C3EB9FDBBB0CD29F /* Keywarden.entitlements */,
+				57B79B878175E61AAE122CDA /* App */,
+				8DF488639E2C840D5490433E /* Core */,
+				940D949265E6597BA37FAA41 /* Views */,
+			);
+			path = Keywarden;
+			sourceTree = "<group>";
+		};
+		E748DBB20721360BBA5C4407 /* KeywardenUITests */ = {
+			isa = PBXGroup;
+			children = (
+				283596C5C5516E2BD056BF53 /* ApprovalUITests.swift */,
+			);
+			path = KeywardenUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		11900B72DB0DF230419D1C58 /* NotificationContent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DCD216EFDDF34303AC17CABB /* Build configuration list for PBXNativeTarget "NotificationContent" */;
+			buildPhases = (
+				559539428AE58B52CD79A46F /* Sources */,
+				43483587C7AE014C733285C2 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotificationContent;
+			packageProductDependencies = (
+			);
+			productName = NotificationContent;
+			productReference = DB9D609EC86046F2DBB38479 /* NotificationContent.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		1A639D7227454ABA010DC467 /* KeywardenUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FEA970BC8540A8BC06B80477 /* Build configuration list for PBXNativeTarget "KeywardenUITests" */;
+			buildPhases = (
+				CF6FB9C5DEF45C5B54475DEF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8ACECDB76266D2A532043C22 /* PBXTargetDependency */,
+			);
+			name = KeywardenUITests;
+			packageProductDependencies = (
+			);
+			productName = KeywardenUITests;
+			productReference = 3C7596C54251CB80CDDFDB45 /* KeywardenUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		7BAE1D9C8D3B032531657020 /* KeywardenTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6CC1B9981334D07A0909B6FF /* Build configuration list for PBXNativeTarget "KeywardenTests" */;
+			buildPhases = (
+				024F2F8FAB7B4DDF30418E9C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				552D4AA51B1E63FC190D3A9F /* PBXTargetDependency */,
+			);
+			name = KeywardenTests;
+			packageProductDependencies = (
+			);
+			productName = KeywardenTests;
+			productReference = 93E1B2D262209B12B55E67D9 /* KeywardenTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		ECE96CB8B3DD45375EF03B77 /* Keywarden */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 522C6DE5A422945525B4D87C /* Build configuration list for PBXNativeTarget "Keywarden" */;
+			buildPhases = (
+				C1AAF28C17669E83F1C54CF6 /* Sources */,
+				D27769A81229165F80247285 /* Resources */,
+				F675122303753795E8D6C751 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3D1C81D4A54CF11F9DEB472C /* PBXTargetDependency */,
+			);
+			name = Keywarden;
+			packageProductDependencies = (
+			);
+			productName = Keywarden;
+			productReference = D946DFD5E3170A51BEC54707 /* Keywarden.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3832481255DCB9E193E4A515 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					11900B72DB0DF230419D1C58 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					1A639D7227454ABA010DC467 = {
+						DevelopmentTeam = "";
+						TestTargetID = ECE96CB8B3DD45375EF03B77;
+					};
+					7BAE1D9C8D3B032531657020 = {
+						DevelopmentTeam = "";
+					};
+					ECE96CB8B3DD45375EF03B77 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = C8DDB88ECE0D46454DD83C0E /* Build configuration list for PBXProject "Keywarden" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 8500FF6D379AB97E764C209A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6D2657CA9D6F5DE8646F3364 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				ECE96CB8B3DD45375EF03B77 /* Keywarden */,
+				7BAE1D9C8D3B032531657020 /* KeywardenTests */,
+				1A639D7227454ABA010DC467 /* KeywardenUITests */,
+				11900B72DB0DF230419D1C58 /* NotificationContent */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D27769A81229165F80247285 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE7ECCA71203AFD4B3280702 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		024F2F8FAB7B4DDF30418E9C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BE103E1BA4C958B8D789EB3A /* ApprovalModelTests.swift in Sources */,
+				C68C0CCD6E15552DD1A06B66 /* CryptoBoxTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		559539428AE58B52CD79A46F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26BBD23F33A862701983EE5E /* Base64URL.swift in Sources */,
+				8261CD63716CC284BF0C648B /* CryptoBox.swift in Sources */,
+				1E578F90510381BBDDDE21CA /* KeychainStore.swift in Sources */,
+				B0BCA7E3DBFDD5FFA8843D2C /* Models.swift in Sources */,
+				7FDBCE67751E0C1B0027DE63 /* NotificationPreview.swift in Sources */,
+				C558674F028721C465F5B973 /* NotificationViewController.swift in Sources */,
+				F39F30C139D477BF4EC35A9F /* RelayClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1AAF28C17669E83F1C54CF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDA95FB5549381F1FA4636EB /* ApprovalModel.swift in Sources */,
+				AFE0AB858DC0543A75FCF94F /* Base64URL.swift in Sources */,
+				03D72CA9D1A4A7C5A58164D3 /* ContentView.swift in Sources */,
+				96AB8A11EBB3162464247100 /* CryptoBox.swift in Sources */,
+				A18D0C0F6EE5E04A4C85CDD2 /* KeychainStore.swift in Sources */,
+				BEFADBECC55723AAD35D0BF2 /* KeywardenApp.swift in Sources */,
+				749F16E8A02E293BFF0B6540 /* Models.swift in Sources */,
+				DA12688E5292D3E19178BA67 /* NotificationPreview.swift in Sources */,
+				CEA76C97C523301F659CDAF6 /* NotificationRoute.swift in Sources */,
+				5B756F4589D25D3291286D89 /* Notifications.swift in Sources */,
+				01111A4BD0317290DED81CB1 /* PreviewData.swift in Sources */,
+				D6A0ED33409EDB0D794BFFB3 /* QRScannerView.swift in Sources */,
+				6175DBF268DD28F9EEA5146D /* RelayClient.swift in Sources */,
+				589C3662F69FF4DE28CDA6E9 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF6FB9C5DEF45C5B54475DEF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				04828F8E540DD6BD2B698F2A /* ApprovalUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3D1C81D4A54CF11F9DEB472C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 11900B72DB0DF230419D1C58 /* NotificationContent */;
+			targetProxy = BFD958F934922F64D2D468DD /* PBXContainerItemProxy */;
+		};
+		552D4AA51B1E63FC190D3A9F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ECE96CB8B3DD45375EF03B77 /* Keywarden */;
+			targetProxy = 34ECE183CB317FD46FCAB01D /* PBXContainerItemProxy */;
+		};
+		8ACECDB76266D2A532043C22 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ECE96CB8B3DD45375EF03B77 /* Keywarden */;
+			targetProxy = 202D22849C06DCAE8471C907 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0F00F0005AB0A85DCC72196E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sawmills.keywarden.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Keywarden.app/Keywarden";
+			};
+			name = Release;
+		};
+		23C41D29CAD28312491F1790 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NotificationContent/NotificationContent.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				OTHER_LDFLAGS = "$(inherited) -Wl,-needed_framework,UserNotificationsUI";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.sawmills.keywarden.notification-content";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		826AE77EA17FFC5ACF570D02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sawmills.keywarden.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Keywarden;
+			};
+			name = Release;
+		};
+		882A57939ED208921265E238 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Keywarden/Keywarden.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = Keywarden/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sawmills.keywarden;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		90ED95655FAA30D8A1895231 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sawmills.keywarden.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Keywarden.app/Keywarden";
+			};
+			name = Debug;
+		};
+		B0DD3814EABD5F53BA9F94C2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sawmills.keywarden.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Keywarden;
+			};
+			name = Debug;
+		};
+		BABFD37AF643FD2EDA4B706B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NotificationContent/NotificationContent.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				OTHER_LDFLAGS = "$(inherited) -Wl,-needed_framework,UserNotificationsUI";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.sawmills.keywarden.notification-content";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BFA01D1E5F658AD76BBAAFC7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Keywarden/Keywarden.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = Keywarden/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.sawmills.keywarden;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E77C86CAB1DE14D562D4235B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				APS_ENVIRONMENT = development;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		EFBE39169CF387A3240984C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				APS_ENVIRONMENT = production;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		522C6DE5A422945525B4D87C /* Build configuration list for PBXNativeTarget "Keywarden" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BFA01D1E5F658AD76BBAAFC7 /* Debug */,
+				882A57939ED208921265E238 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6CC1B9981334D07A0909B6FF /* Build configuration list for PBXNativeTarget "KeywardenTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				90ED95655FAA30D8A1895231 /* Debug */,
+				0F00F0005AB0A85DCC72196E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C8DDB88ECE0D46454DD83C0E /* Build configuration list for PBXProject "Keywarden" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E77C86CAB1DE14D562D4235B /* Debug */,
+				EFBE39169CF387A3240984C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DCD216EFDDF34303AC17CABB /* Build configuration list for PBXNativeTarget "NotificationContent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BABFD37AF643FD2EDA4B706B /* Debug */,
+				23C41D29CAD28312491F1790 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FEA970BC8540A8BC06B80477 /* Build configuration list for PBXNativeTarget "KeywardenUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0DD3814EABD5F53BA9F94C2 /* Debug */,
+				826AE77EA17FFC5ACF570D02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3832481255DCB9E193E4A515 /* Project object */;
+}

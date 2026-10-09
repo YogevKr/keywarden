@@ -1,0 +1,19 @@
+node_modules/
+.DS_Store
+target/
+.wrangler/
+dist/
+coverage/
+state/
+*.local.json
+
+# Local deployment data and signed build artifacts
+.env
+.env.*
+*.xcarchive/
+*.xcresult/
+*.ipa
+*.p8
+*.p12
+*.mobileprovision
+xcuserdata/

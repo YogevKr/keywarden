@@ -1,0 +1,12 @@
+name = "keywarden-relay"
+main = "src/index.ts"
+compatibility_date = "2026-10-06"
+
+[durable_objects]
+bindings = [
+  { name = "BROKER_CHANNELS", class_name = "BrokerChannel" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["BrokerChannel"]

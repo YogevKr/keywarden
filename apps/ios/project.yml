@@ -1,0 +1,128 @@
+name: Keywarden
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: 5.9
+    DEVELOPMENT_TEAM: ""
+    APS_ENVIRONMENT: development
+  configs:
+    Release:
+      APS_ENVIRONMENT: production
+targets:
+  Keywarden:
+    type: application
+    platform: iOS
+    sources:
+      - path: Keywarden
+    resources:
+      - path: Keywarden/Assets.xcassets
+    dependencies:
+      - target: NotificationContent
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden
+        INFOPLIST_FILE: Keywarden/Info.plist
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: Keywarden/Info.plist
+      properties:
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "12"
+        NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
+        UILaunchScreen: {}
+        NSFaceIDUsageDescription: "Approve Keywarden agent sessions."
+        NSCameraUsageDescription: "Scan the Keywarden setup QR code."
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleIconName: AppIcon
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        'UISupportedInterfaceOrientations~ipad':
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    entitlements:
+      path: Keywarden/Keywarden.entitlements
+      properties:
+        aps-environment: $(APS_ENVIRONMENT)
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)ai.sawmills.keywarden
+          - $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
+  NotificationContent:
+    type: app-extension
+    platform: iOS
+    dependencies:
+      - sdk: UserNotificationsUI.framework
+    sources:
+      - path: NotificationContent
+      - path: Keywarden/Core/Base64URL.swift
+      - path: Keywarden/Core/CryptoBox.swift
+      - path: Keywarden/Core/KeychainStore.swift
+      - path: Keywarden/Core/Models.swift
+      - path: Keywarden/Core/RelayClient.swift
+      - path: Keywarden/Core/NotificationPreview.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden.notification-content
+        CODE_SIGN_STYLE: Automatic
+        APPLICATION_EXTENSION_API_ONLY: YES
+        OTHER_LDFLAGS: $(inherited) -Wl,-needed_framework,UserNotificationsUI
+        SKIP_INSTALL: YES
+    info:
+      path: NotificationContent/Info.plist
+      properties:
+        CFBundleDisplayName: Keywarden
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "12"
+        NotificationKeychainAccessGroup: $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.content-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationViewController
+          NSExtensionAttributes:
+            UNNotificationExtensionCategory: KEYWARDEN_APPROVAL
+            UNNotificationExtensionInitialContentSizeRatio: 1.2
+            UNNotificationExtensionDefaultContentHidden: true
+            UNNotificationExtensionUserInteractionEnabled: true
+    entitlements:
+      path: NotificationContent/NotificationContent.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)ai.sawmills.keywarden.notifications
+  KeywardenTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: KeywardenTests
+    dependencies:
+      - target: Keywarden
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden.tests
+        GENERATE_INFOPLIST_FILE: YES
+  KeywardenUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: KeywardenUITests
+    dependencies:
+      - target: Keywarden
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.sawmills.keywarden.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Keywarden
+schemes:
+  Keywarden:
+    build:
+      targets:
+        Keywarden: all
+    test:
+      targets:
+        - KeywardenTests
+        - KeywardenUITests
