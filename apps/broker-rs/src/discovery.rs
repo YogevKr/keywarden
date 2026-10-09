@@ -43,7 +43,7 @@ impl SessionStore {
         vault_matches(&self.vault_aliases, account, left, right)
     }
 
-    fn discovery_scopes(
+    pub(crate) fn discovery_scopes(
         &self,
         account: &str,
         lease_id: &str,

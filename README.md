@@ -64,6 +64,12 @@ Agent vault commands need no approval. Use `--account personal` or `--account wo
 The CLI and MCP share scope checks, approval handling, and metadata filtering.
 
 Check delivery with `keywarden status --request REQUEST_ID`.
+
+Use `keywarden status` for local account access without contacting 1Password.
+Use `keywarden status --check-provider` to test connections through existing list access.
+The MCP equivalent is `keywarden_access_status` with `{"checkProvider":true}`.
+Checks never request approval, read credential fields, or extend leases.
+See [provider check results and the 0.3.0 field migration](docs/mcp.md#optional-provider-check).
 Use `keywarden retry --request REQUEST_ID` to retry the notification without creating another request.
 Use `keywarden cancel --request REQUEST_ID` to stop a pending request from granting access.
 Apple acceptance does not confirm phone delivery. The current phone protocol has no delivery receipt.

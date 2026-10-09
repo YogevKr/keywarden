@@ -38,6 +38,7 @@ mod cli;
 mod client;
 mod command;
 mod config;
+mod connection;
 mod delivery;
 mod discovery;
 mod mcp;
@@ -531,7 +532,7 @@ impl SessionStore {
             };
             accounts.push(serde_json::json!({"account":account,"status":status,"approvalRequired":!direct,"directScope":if direct { serde_json::json!({"accounts":["agent"],"vaults":["agents"],"items":"all","operations":["read","list","write","create","delete"]}) } else { Value::Null },"leases":leases,"pendingRequests":pending}));
         }
-        serde_json::json!({"status":"ready","accounts":accounts,"mcpOperations":["read","list"],"providerVerified":false})
+        serde_json::json!({"status":"ready","accounts":accounts,"mcpOperations":["read","list"],"providerCheck":"not_performed"})
     }
 
     fn authorize(&mut self, operation: &OperationRequest) -> Result<()> {
@@ -1249,6 +1250,16 @@ impl Broker {
     }
 
     async fn run_provider(&self, profile: &str, args: &[String]) -> Result<OpResult> {
+        self.run_provider_with_timeout(profile, args, TokioDuration::from_secs(45))
+            .await
+    }
+
+    async fn run_provider_with_timeout(
+        &self,
+        profile: &str,
+        args: &[String],
+        timeout: TokioDuration,
+    ) -> Result<OpResult> {
         for argument in args {
             if argument.contains('\0') {
                 return Err(msg("Operation contains a NUL byte"));
@@ -1293,7 +1304,7 @@ impl Broker {
                     .ok_or_else(|| msg("Broker service token is not loaded"))?,
             );
         }
-        let output = provider::output(command, TokioDuration::from_secs(45)).await?;
+        let output = provider::output(command, timeout).await?;
         if output.stdout.len() + output.stderr.len() > MAX_OUTPUT_BYTES {
             return Err(msg("opgate output exceeded the broker limit"));
         }
@@ -1652,9 +1663,9 @@ async fn route_inner(broker: &Arc<Broker>, request: HttpRequest) -> Result<Value
             .filter(|pending| pending.status == "pending" && timestamp(&pending.request.expires_at).is_ok_and(|at| at > Utc::now()))
             .map(|pending| serde_json::json!({"requestId":pending.request.id,"expiresAt":pending.request.expires_at,"agent":pending.request.agent})).collect();
         let accepted = broker.last_push.lock().await.clone();
-        return Ok(
-            serde_json::json!({"ok":true,"brokerId":broker.identity.broker_id,"phoneId":phone,"relay":broker.relay.is_some(),"notifications":broker.push.lock().await.is_some(),"lastPushAt":accepted,"lastAppleAcceptedAt":accepted,"phoneDelivery":"unconfirmed","pendingRequests":requests}),
-        );
+        let mut status = broker.store.lock().await.access_overview();
+        status.as_object_mut().unwrap().extend(serde_json::json!({"ok":true,"brokerId":broker.identity.broker_id,"phoneId":phone,"relay":broker.relay.is_some(),"notifications":broker.push.lock().await.is_some(),"lastPushAt":accepted,"lastAppleAcceptedAt":accepted,"phoneDelivery":"unconfirmed","pendingRequests":requests}).as_object().unwrap().clone());
+        return Ok(status);
     }
     if request.method == "GET" && path == "/v1/identity" {
         return Ok(
@@ -1663,6 +1674,10 @@ async fn route_inner(broker: &Arc<Broker>, request: HttpRequest) -> Result<Value
     }
     if request.method == "GET" && path == "/v1/access" {
         return Ok(broker.store.lock().await.access_overview());
+    }
+    if request.method == "POST" && path == "/v1/access/check" {
+        let query: connection::CheckQuery = json_body(&request.body)?;
+        return broker.check_connections(query).await;
     }
     if request.method == "POST" && path == "/v1/operations/resolve" {
         let operation: OperationRequest = json_body(&request.body)?;

@@ -302,6 +302,22 @@ impl Server {
             "keywarden_access_status" => {
                 let args: StatusArgs = parse(args)?;
                 check_wait(args.wait_seconds)?;
+                if args.check_provider {
+                    if args.request_id.is_some() || args.wait_seconds != 0 {
+                        return Err(msg(
+                            "checkProvider cannot be combined with requestId or waitSeconds.",
+                        ));
+                    }
+                    return cli::local(
+                        "POST",
+                        "/v1/access/check",
+                        Some(json!({"account":args.account})),
+                    )
+                    .await;
+                }
+                if args.account.is_some() {
+                    return Err(msg("account requires checkProvider=true."));
+                }
                 let Some(id) = args.request_id else {
                     return cli::local("GET", "/v1/access", None).await;
                 };
@@ -828,6 +844,9 @@ struct StatusArgs {
     request_id: Option<String>,
     #[serde(default)]
     wait_seconds: u64,
+    #[serde(default)]
+    check_provider: bool,
+    account: Option<String>,
 }
 
 #[derive(Deserialize)]

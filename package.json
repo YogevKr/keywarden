@@ -1,7 +1,7 @@
 {
   "name": "keywarden",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Remote approval and scoped session leases for agent access through opgate",
   "type": "module",
   "workspaces": [

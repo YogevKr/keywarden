@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createServer, request as httpRequest } from "node:http";
-import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { spawn, type ChildProcess } from "node:child_process";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -49,12 +49,19 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
   const secretValue = 'synthetic-only\nvalue with "quotes" and spaces\n';
 
   try {
+    await writeFile(join(directory, "provider-calls"), "");
+    await writeFile(join(directory, "provider-mode"), "ok");
     await writeFile(
       fakeOp,
       "#!/bin/sh\n" +
         (rustBinary
-          ? '[ "$1" = op ] && [ "$2" = --profile ] && { [ "$3" = keywarden-personal ] || [ "$3" = agent ]; } && [ "$4" = -- ] || exit 17\nshift 4\n'
+          ? '[ "$1" = op ] && [ "$2" = --profile ] && { [ "$3" = keywarden-personal ] || [ "$3" = agent ] || [ "$3" = keywarden-work ]; } && [ "$4" = -- ] || exit 17\nshift 4\n'
           : "[ \"$OP_SERVICE_ACCOUNT_TOKEN\" = service-token ] || exit 17\n") +
+        'printf "%s\\n" "$*" >> "$(dirname "$0")/provider-calls"\n' +
+        'mode="$(cat "$(dirname "$0")/provider-mode")"\n' +
+        'if [ "$mode" = auth-failure ]; then printf "invalid service account token: sensitive-error-canary" >&2; exit 1; fi\n' +
+        'if [ "$mode" = invalid ]; then printf "sensitive-error-canary"; exit 0; fi\n' +
+        'if [ "$mode" = slow ]; then sleep 2; fi\n' +
         'if [ "$1 $2" = "vault get" ]; then name="${3%-vaultid}"; printf \'{"id":"%s-vaultid","name":"%s"}\' "$name" "$name"; exit 0; fi\n' +
         'if [ "$1 $2" = "vault list" ]; then printf \'[{"id":"agents-vaultid","name":"agents"},{"id":"other-vaultid","name":"other"}]\'; exit 0; fi\n' +
         'if [ "$1 $2" = "item get" ] && [ "$6" = "--format=json" ]; then printf \'{"id":"item-1","title":"Example","fields":[{"id":"username","label":"username","type":"STRING","value":"hidden-user"},{"id":"password","label":"password","type":"CONCEALED","value":"hidden-secret","section":{"id":"login","label":"Login"}}]}\'; exit 0; fi\n' +
@@ -87,7 +94,7 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
           KEYWARDEN_PHONE_ID: "phone-1",
           KEYWARDEN_PHONE_SIGNING_PUBLIC_JWK: JSON.stringify(phoneSigningPublic),
           KEYWARDEN_PHONE_ENCRYPTION_PUBLIC_JWK: JSON.stringify(phoneEncryptionPublic),
-          ...(rustBinary ? { KEYWARDEN_OPGATE_PROFILE: "agent", KEYWARDEN_OPGATE_PERSONAL_PROFILE: "keywarden-personal" } : {}),
+          ...(rustBinary ? { KEYWARDEN_OPGATE_PROFILE: "agent", KEYWARDEN_OPGATE_PERSONAL_PROFILE: "keywarden-personal", KEYWARDEN_OPGATE_WORK_PROFILE: "keywarden-work" } : {}),
         },
         stdio: ["pipe", "ignore", "pipe"],
       },
@@ -110,11 +117,44 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       assert.equal(overview.structuredContent.status, "ready");
       assert.equal(overview.structuredContent.accounts[0].status, "active");
       assert.equal(overview.structuredContent.accounts[1].status, "approval_required");
-      assert.equal(overview.structuredContent.providerVerified, false);
+      assert.equal(overview.structuredContent.providerCheck, "not_performed");
+      assert.equal(overview.structuredContent.providerVerified, undefined);
+      const cliOverview = await runCLI(rustBinary, socketPath, ["status"]);
+      assert.equal(cliOverview.code, 0, cliOverview.stderr);
+      assert.equal(JSON.parse(cliOverview.stdout).providerCheck, "not_performed");
+      assert.equal(await readFile(join(directory, "provider-calls"), "utf8"), "");
+      const checked = await mcp.call("keywarden_access_status", { checkProvider: true });
+      assert.equal(checked.isError, false);
+      assert.equal(checked.structuredContent.providerCheck, "completed");
+      assert.equal(checked.structuredContent.accounts[0].providerCheck.status, "ok");
+      assert.equal(checked.structuredContent.accounts[1].providerCheck.code, "list_access_required");
+      assert.equal(checked.structuredContent.accounts[2].providerCheck.status, "skipped");
+      assert.equal(JSON.stringify(checked).includes("agents-vaultid"), false);
+      assert.equal((await readFile(join(directory, "provider-calls"), "utf8")).trim(), "vault get agents --format=json");
+      const badCheck = await mcp.call("keywarden_access_status", { checkProvider: true, requestId: "test" });
+      assert.equal(badCheck.isError, true);
+      const invalidAccount = await mcp.call("keywarden_access_status", { checkProvider: true, account: "unknown" });
+      assert.equal(invalidAccount.isError, true);
       assert.equal(relayEntries.size, 0);
       const vaults = await mcp.call("keywarden_list_vaults");
       assert.equal(vaults.isError, false, vaults.content?.[0]?.text);
       assert.deepEqual(vaults.structuredContent.vaults, [{id:"agents-vaultid",name:"agents"}]);
+      // The explicit check must bypass an already populated discovery cache.
+      const callsBeforeCheck = await readFile(join(directory, "provider-calls"), "utf8");
+      await writeFile(join(directory, "provider-mode"), "auth-failure");
+      const failedCheck = await runCLI(rustBinary, socketPath, ["status", "--check-provider", "--account", "agent"]);
+      assert.equal(failedCheck.code, 0, failedCheck.stderr);
+      const failedAccounts = JSON.parse(failedCheck.stdout).accounts;
+      assert.equal(failedAccounts[0].providerCheck.status, "failed");
+      assert.equal(failedAccounts[0].providerCheck.code, "authentication_failed");
+      assert.equal(failedAccounts[1].providerCheck.status, "not_performed");
+      assert.equal(failedCheck.stdout.includes("sensitive-error-canary"), false);
+      assert.notEqual(await readFile(join(directory, "provider-calls"), "utf8"), callsBeforeCheck);
+      await writeFile(join(directory, "provider-mode"), "invalid");
+      const invalidCheck = await mcp.call("keywarden_access_status", { checkProvider: true, account: "agent" });
+      assert.equal(invalidCheck.structuredContent.accounts[0].providerCheck.code, "invalid_provider_response");
+      assert.equal(JSON.stringify(invalidCheck).includes("sensitive-error-canary"), false);
+      await writeFile(join(directory, "provider-mode"), "ok");
       const byVaultId = await mcp.call("keywarden_list_items", {vault:"agents-vaultid",account:"agent"});
       assert.equal(byVaultId.isError,false,byVaultId.content?.[0]?.text);
       assert.deepEqual(byVaultId.structuredContent.items,[{id:"item-1",title:"Example"}]);
@@ -456,6 +496,59 @@ test("local broker, opaque relay, phone approval, and op execution work end to e
       assert.match(blocked.content[0].text, /Session lease is revoked/);
       const status = await mcp.call("keywarden_access_status", { requestId: request.id });
       assert.equal(status.structuredContent.status, "revoked");
+      async function phoneDecision(id: string, choice: "approve" | "deny") {
+        const current = await socketJSON<any>(socketPath, "GET", `/v1/session-requests/${id}`);
+        const entry = await waitForRelayRequest(relayEntries, id);
+        const payload = { ...decision, requestId: id, requestHash: current.requestHash, decision: choice, nonce: `lifecycle-${id}` };
+        entry.decision = await signEnvelope("approval_decision", await encryptForPublicKey(JSON.stringify(payload), identity.encryptionPublicJwk), phoneSigning.privateKey, phoneSigningPublic);
+        await relayDecision(relayURL, identity.brokerId, entry);
+      }
+      for (const terminal of ["denied", "cancelled", "expired"] as const) {
+        const flags = ["request-session", "--account", "work", "--vault", `lifecycle-${terminal}`, "--operation", "list", "--duration", terminal === "expired" ? "2" : "30", "--idle-timeout", "1", "--reason", "Test terminal approval state"];
+        const started = await runCLI(rustBinary!, socketPath, [...flags, "--no-wait"]);
+        assert.equal(started.code, 0, started.stderr);
+        const id = JSON.parse(started.stdout).request.id;
+        const waiting = runCLI(rustBinary!, socketPath, flags);
+        await sleep(150);
+        if (terminal === "denied") await phoneDecision(id, "deny");
+        if (terminal === "cancelled") {
+          const cancel = await runCLI(rustBinary!, socketPath, ["cancel", "--request", id]);
+          assert.equal(cancel.code, 0, cancel.stderr);
+        }
+        const stopped = await waiting;
+        assert.notEqual(stopped.code, 0);
+        assert.match(stopped.stderr, /Session was not approved/);
+        const mcpState = await mcp.call("keywarden_access_status", { requestId: id });
+        assert.equal(mcpState.structuredContent.status, terminal);
+        assert.equal(mcpState.structuredContent.leaseId, null);
+        const cliState = await runCLI(rustBinary!, socketPath, ["status", "--request", id]);
+        assert.equal(JSON.parse(cliState.stdout).session.status, terminal);
+      }
+      // Provider checks require list access, even when read access is active.
+      const readonly = await mcp.call("keywarden_request_access", { account: "work", vaults: ["readonly"], operations: ["read"], reason: "Test read-only check", durationSeconds: 30, idleTimeoutSeconds: 10 });
+      await phoneDecision(readonly.structuredContent.requestId, "approve");
+      await waitForStatus(socketPath, readonly.structuredContent.requestId, "approved");
+      const beforeReadonly = await readFile(join(directory, "provider-calls"), "utf8");
+      const readonlyCheck = await mcp.call("keywarden_access_status", { checkProvider: true, account: "work" });
+      assert.equal(readonlyCheck.structuredContent.accounts[2].providerCheck.code, "list_access_required");
+      assert.equal(await readFile(join(directory, "provider-calls"), "utf8"), beforeReadonly);
+      // Expiry during provider IO must not report a successful authorized check.
+      const short = await mcp.call("keywarden_request_access", { account: "work", vaults: ["short"], operations: ["list"], reason: "Test check expiry", durationSeconds: 30, idleTimeoutSeconds: 1 });
+      await phoneDecision(short.structuredContent.requestId, "approve");
+      const shortApproved = await waitForStatus(socketPath, short.structuredContent.requestId, "approved");
+      const beforeShort = await socketJSON<any>(socketPath, "GET", `/v1/session-requests/${short.structuredContent.requestId}`);
+      await writeFile(join(directory, "provider-mode"), "slow");
+      const expiredCheck = await mcp.call("keywarden_access_status", { checkProvider: true, account: "work" });
+      await writeFile(join(directory, "provider-mode"), "ok");
+      assert.equal(expiredCheck.structuredContent.accounts[2].providerCheck.code, "access_changed");
+      const afterShort = await socketJSON<any>(socketPath, "GET", `/v1/session-requests/${short.structuredContent.requestId}`);
+      assert.equal(afterShort.session.idleUntil, beforeShort.session.idleUntil);
+      assert.equal(afterShort.session.status, "expired");
+      const expiredCLI = await runCLI(rustBinary!, socketPath, ["list", "--account", "work", "--vault", "short", "--lease", shortApproved.leaseId!, "--no-request"]);
+      assert.notEqual(expiredCLI.code, 0);
+      const expiredMCP = await mcp.call("keywarden_list_items", { account: "work", vault: "short", leaseId: shortApproved.leaseId, requestIfNeeded: false });
+      assert.equal(expiredMCP.isError, true);
+      assert.equal(expiredMCP.structuredContent.error.code, "lease_expired");
       assert.equal(Buffer.concat(mcp.errors).toString(), "");
     }
 

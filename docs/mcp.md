@@ -164,11 +164,47 @@ keywarden list --vault agents --query deployment --limit 20 --cursor CURSOR
 ## Approval delivery and controls
 
 Call `keywarden_access_status` without arguments before any access request.
-It returns `status: "ready"`, `accounts`, `mcpOperations`, and `providerVerified: false`.
+It returns `status: "ready"`, `accounts`, `mcpOperations`, and `providerCheck: "not_performed"`.
 Each account includes its direct scope, active lease scopes, and pending requests.
 `active` can cover only part of an account. Check each lease's vault, item, and operation scope.
 The overview reads local broker policy. It does not verify provider credentials, execute vault commands, or renew idle limits.
 Expired and revoked leases do not appear as active access.
+
+### Optional provider check
+
+Call `keywarden_access_status` with `{"checkProvider":true}` to check each account through existing list access.
+Add `"account":"agent"`, `"personal"`, or `"work"` to check one account.
+Do not combine this check with `requestId` or `waitSeconds`.
+
+The response sets `providerCheck: "completed"`. This means the check finished, not that every account passed.
+Each account has a `providerCheck` object:
+
+| Status | Meaning |
+| --- | --- |
+| `ok` | A fresh vault metadata call succeeded within approved list scope. |
+| `failed` | The provider failed. `code` and `message` explain the safe error. |
+| `skipped` | List access was unavailable or changed during the check. `code` and `next` explain the result. |
+| `not_performed` | The account was not selected. |
+
+The check bypasses metadata caches. It uses one provider command per account, with an eight-second command timeout.
+It never requests approval, reads item fields, returns vault metadata, or renews access.
+Accounts with read-only access are skipped. A successful check does not verify field reads, writes, or every vault.
+`checkedAt` records when an attempted check finished. Scope and provider access can change afterward.
+
+CLI equivalents:
+
+```sh
+keywarden status
+keywarden status --check-provider
+keywarden status --check-provider --account agent
+```
+
+CLI status keeps its broker and notification fields and adds the local account overview.
+Provider checks return JSON with exit code zero when the check completes, including reported provider failures.
+Inspect each account's `providerCheck.status`. Invalid arguments and broker transport failures return a nonzero exit code.
+
+Version 0.3.0 replaces `providerVerified` with `providerCheck`. Update consumers that read the old field.
+MCP check results use `isError: false`; invalid arguments or broker transport errors use `isError: true`.
 
 Supply `requestId` to poll one request. Omitting it always returns the account overview, even after a prior request.
 Request status and pending operation results include `delivery`.

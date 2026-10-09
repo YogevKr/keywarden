@@ -180,7 +180,7 @@
   },
   {
     "name": "keywarden_access_status",
-    "description": "Return current account access without creating a request or calling 1Password. With no requestId, return agent scope, active leases, and pending requests for each account. providerVerified=false means this reports broker policy, not provider connectivity. Supply requestId to poll one approval with waitSeconds (0-25). Status does not renew leases.",
+    "description": "Report local permissions without calling 1Password by default. providerCheck=not_performed means no connectivity check ran. Set checkProvider=true to check fresh vault metadata through existing list access, optionally for one account. Checks never request approval, read fields, or renew leases. Per-account results are ok, failed, or skipped; ok covers metadata only. Each account command has an eight-second timeout. Do not combine checkProvider with requestId or waitSeconds. Supply requestId to poll one approval with waitSeconds (0-25).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -194,6 +194,20 @@
           "maximum": 25,
           "default": 0,
           "description": "Wait 0-25 seconds per call. Repeat the same call or access_status for a longer wait."
+        },
+        "checkProvider": {
+          "type": "boolean",
+          "default": false,
+          "description": "Check provider connectivity using existing list access. Never creates an approval request."
+        },
+        "account": {
+          "type": "string",
+          "enum": [
+            "agent",
+            "personal",
+            "work"
+          ],
+          "description": "Check this account only. Requires checkProvider=true. Omit to check all three accounts."
         }
       },
       "additionalProperties": false
@@ -281,15 +295,19 @@
                 "type": "string"
               }
             },
-            "providerVerified": {
-              "const": false
+            "providerCheck": {
+              "type": "string",
+              "enum": [
+                "not_performed",
+                "completed"
+              ]
             }
           },
           "required": [
             "status",
             "accounts",
             "mcpOperations",
-            "providerVerified"
+            "providerCheck"
           ],
           "additionalProperties": false
         }
@@ -297,7 +315,7 @@
     },
     "annotations": {
       "readOnlyHint": true,
-      "openWorldHint": false
+      "openWorldHint": true
     }
   },
   {

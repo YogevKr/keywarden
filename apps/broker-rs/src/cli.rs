@@ -153,6 +153,36 @@ pub async fn run(args: &[String]) -> Result<()> {
             Ok(())
         }
         Some("status") => {
+            let mut index = 1;
+            while index < args.len() {
+                match args[index].as_str() {
+                    "--check-provider" => index += 1,
+                    "--account" | "--request" => {
+                        required(args, &args[index])?;
+                        if args.get(index + 1).is_none_or(|v| v.starts_with("--")) {
+                            return Err(msg(format!("Missing {} value", args[index])));
+                        }
+                        index += 2;
+                    }
+                    _ => return Err(msg(format!("Unknown status option: {}", args[index]))),
+                }
+            }
+            if args.iter().any(|arg| arg == "--check-provider") {
+                if flag_value(args, "--request").is_some() {
+                    return Err(msg("--check-provider cannot be combined with --request."));
+                }
+                return print(
+                    &local(
+                        "POST",
+                        "/v1/access/check",
+                        Some(serde_json::json!({"account":flag_value(args, "--account")})),
+                    )
+                    .await?,
+                );
+            }
+            if flag_value(args, "--account").is_some() {
+                return Err(msg("--account requires --check-provider."));
+            }
             let path = flag_value(args, "--request")
                 .map(|id| format!("/v1/session-requests/{}", crate::url_escape(&id)))
                 .unwrap_or_else(|| "/v1/status".into());
@@ -190,9 +220,12 @@ pub async fn run(args: &[String]) -> Result<()> {
                     None,
                 )
                 .await?;
-                match status["status"].as_str() {
-                    Some("approved") => return print(&status),
-                    Some("denied" | "expired") => {
+                match status["session"]["status"]
+                    .as_str()
+                    .or(status["status"].as_str())
+                {
+                    Some("active" | "approved") => return print(&status),
+                    Some("denied" | "expired" | "cancelled" | "revoked") => {
                         print(&status)?;
                         return Err(msg("Session was not approved"));
                     }
@@ -385,6 +418,18 @@ Pending approval returns a request ID and a nonzero exit code.
 Repeat the same command after approval. The broker reuses the request.
 Use request-session for planned access with several operations."
         );
+    } else if command == Some("status") {
+        println!(
+            "keywarden status
+  Report local permissions and broker state without calling 1Password.
+keywarden status --request ID
+  Report one approval request.
+keywarden status --check-provider [--account agent|personal|work]
+  Check fresh vault metadata using existing list access. Default: all accounts.
+  Report ok, failed, or skipped for each account. No new approval or lease renewal.
+  Each account uses one provider command with an eight-second timeout.
+  This does not verify field reads or writes. No vault contents are returned."
+        );
     } else if command == Some("request-session") {
         println!(
             "keywarden request-session --account personal --vault NAME --reason TEXT
@@ -425,6 +470,7 @@ Writes, creation, and deletion always require an explicit operation."
     Defaults: read + list, 900 seconds; detects Codex or Claude Code.
     Run keywarden request-session --help for all scope and identity options.
   status --request ID
+  status --check-provider [--account agent|personal|work]
   retry --request ID | cancel --request ID
   op [--lease ID] [--profile personal] --operation read --vault NAME -- read op://NAME/ITEM/FIELD --no-newline
   mcp
